@@ -1,0 +1,50 @@
+# ========================================
+# 프로젝트 기본 값
+# ========================================
+project_id = "your-prod-gcp-project-id"
+
+# ========================================
+# 배포 환경 기본 값
+# ========================================
+region      = "asia-northeast3"
+environment = "prod"
+
+# ========================================
+# VPC 관련 값
+# ========================================
+vpc_name          = "prod-vpc"
+ssh_source_ranges = ["203.0.113.10/32"]
+enable_nat        = true
+
+# ========================================
+# 컴퓨트 관련 값
+# ========================================
+use_instance_group   = true
+create_web_instances = true
+instance_group_size  = 2
+
+# 오토스케일링 기본 값입니다.
+enable_autoscaling       = true
+autoscaling_min_replicas = 2
+autoscaling_max_replicas = 5
+
+web_machine_type = "e2-standard-2"
+web_source_image = "ubuntu-os-cloud/ubuntu-2204-lts"
+
+# ========================================
+# 스토리지 관련 값
+# ========================================
+create_storage_buckets = true
+storage_location       = "ASIA"
+
+# CORS 허용 Origin
+allowed_cors_origins = [
+  "https://www.example.com",
+  "https://api.example.com",
+]
+
+# ========================================
+# 로드 밸런서 관련 값
+# ========================================
+create_load_balancer = true
+lb_type              = "NETWORK"

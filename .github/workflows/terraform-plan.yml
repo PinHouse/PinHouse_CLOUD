@@ -88,6 +88,11 @@ jobs:
           terraform_version: 1.6.0
           terraform_wrapper: false
 
+      - name: Terraform 포맷 확인
+        id: fmt
+        working-directory: terraform/environments/${{ matrix.environment }}
+        run: terraform fmt -check
+
       - name: GCP 인증
         uses: google-github-actions/auth@v2
         with:
@@ -134,12 +139,6 @@ jobs:
 
           printf '%s\n' "${TFVARS_CONTENT}" > terraform.tfvars
           chmod 600 terraform.tfvars
-
-      - name: Terraform 포맷 확인
-        id: fmt
-        if: steps.init.outcome == 'success'
-        working-directory: terraform/environments/${{ matrix.environment }}
-        run: terraform fmt -check
 
       - name: Terraform 유효성 검사
         id: validate
