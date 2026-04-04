@@ -64,7 +64,7 @@ variable "create_web_instances" {
 variable "instance_group_size" {
   description = "관리형 인스턴스 그룹의 목표 인스턴스 수입니다."
   type        = number
-  default     = 2
+  default     = 1
 }
 
 variable "enable_autoscaling" {
@@ -76,7 +76,7 @@ variable "enable_autoscaling" {
 variable "autoscaling_min_replicas" {
   description = "오토스케일링 최소 인스턴스 수입니다."
   type        = number
-  default     = 2
+  default     = 1
 }
 
 variable "autoscaling_max_replicas" {
@@ -121,7 +121,7 @@ variable "create_storage_buckets" {
 variable "storage_location" {
   description = "스토리지 버킷을 생성할 위치입니다."
   type        = string
-  default     = "ASIA" # 운영 환경에서는 멀티 리전을 기본값으로 사용합니다.
+  default     = "ASIA-NORTHEAST3" # 비용 절감을 위해 단일 리전을 기본값으로 사용합니다.
 }
 
 variable "allowed_cors_origins" {
@@ -158,9 +158,9 @@ variable "common_tags" {
   description = "공통 태그입니다."
   type        = map(string)
   default = {
-    Project     = "pinhouse"
-    Environment = "prod"
-    Version     = "v1"
-    ManagedBy   = "Terraform"
+    project     = "pinhouse"
+    environment = "prod"
+    version     = "v1"
+    managed_by  = "terraform"
   }
 }

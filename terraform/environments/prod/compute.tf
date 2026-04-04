@@ -31,21 +31,13 @@ module "web_servers" {
       tags                = ["web-server", var.environment]
       deletion_protection = true # 실수로 삭제되지 않도록 보호합니다.
     }
-    web2 = {
-      name                = "${var.environment}-web-02"
-      zone                = "${var.region}-b"
-      machine_type        = var.web_machine_type
-      enable_external_ip  = false
-      tags                = ["web-server", var.environment]
-      deletion_protection = true
-    }
   }) : tomap({})
 
   # 공통 인스턴스 설정
   machine_type       = var.web_machine_type
   source_image       = var.web_source_image
   boot_disk_size_gb  = var.web_machine_ssd
-  boot_disk_type     = "pd-ssd" # 프로덕션 환경은 SSD 디스크를 사용합니다.
+  boot_disk_type     = "pd-ssd"
   enable_external_ip = false
   tags               = ["web-server", var.environment]
 

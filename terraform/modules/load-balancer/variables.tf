@@ -84,9 +84,14 @@ variable "health_check_ids" {
 # 백엔드 서비스 변수
 # ========================================
 variable "backend_protocol" {
-  description = "백엔드 서비스 프로토콜입니다. TCP, UDP, SSL 중 하나를 사용합니다."
+  description = "백엔드 서비스 프로토콜입니다. TCP, UDP, UNSPECIFIED 중 하나를 사용합니다."
   type        = string
   default     = "TCP"
+
+  validation {
+    condition     = contains(["TCP", "UDP", "UNSPECIFIED"], var.backend_protocol)
+    error_message = "backend_protocol은 TCP, UDP, UNSPECIFIED 중 하나여야 합니다."
+  }
 }
 
 variable "backend_timeout_sec" {
