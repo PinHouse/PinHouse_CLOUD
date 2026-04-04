@@ -47,7 +47,7 @@ module "k8s_worker_nodes" {
 
   name_prefix = "${var.project}-${var.environment}-k8s-worker"
   network     = module.vpc.vpc_self_link
-  subnetwork  = module.vpc.subnets["web"].self_link
+  subnetwork  = module.vpc.subnets["app"].self_link
 
   # 관리형 인스턴스 그룹 설정
   create_instance_template = true
