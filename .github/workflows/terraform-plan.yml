@@ -65,6 +65,31 @@ jobs:
           echo "감지된 환경: $ENVIRONMENTS_JSON"
           echo "environments=$ENVIRONMENTS_JSON" >> "$GITHUB_OUTPUT"
 
+  # detect-changes 출력값을 바로 확인하기 위한 디버그 잡
+  debug-detect-changes:
+    name: 디버그 - 감지 결과
+    runs-on: ubuntu-22.04
+    needs: detect-changes
+    if: always()
+
+    steps:
+      - name: detect-changes 출력 확인
+        env:
+          ENVIRONMENTS: ${{ needs.detect-changes.outputs.environments }}
+        run: |
+          echo "detect-changes environments 원본: $ENVIRONMENTS"
+          printf 'detect-changes environments quoted: <%s>\n' "$ENVIRONMENTS"
+          echo "detect-changes environments 길이: ${#ENVIRONMENTS}"
+          echo "detect-changes environments 바이트:"
+          printf '%s' "$ENVIRONMENTS" | od -An -tx1
+
+          echo "detect-changes environments JSON 파싱 시도:"
+          if [ -n "$ENVIRONMENTS" ]; then
+            printf '%s\n' "$ENVIRONMENTS" | jq -c .
+          else
+            echo "값이 비어 있습니다."
+          fi
+
   # 환경별 Terraform init/fmt/validate/plan을 수행하고 결과 파일을 아티팩트로 남깁니다.
   terraform-plan-checks:
     name: 체크 - ${{ matrix.environment }}
@@ -79,6 +104,11 @@ jobs:
     steps:
       - name: 코드 체크아웃
         uses: actions/checkout@v4
+
+      - name: Matrix 디버그
+        run: |
+          echo "matrix.environment=${{ matrix.environment }}"
+          echo "needs.detect-changes.outputs.environments=${{ needs.detect-changes.outputs.environments }}"
 
       # 출력 파일 기반으로 결과를 다루기 위해 wrapper를 비활성화
       - name: Terraform 설치
