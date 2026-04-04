@@ -1,0 +1,99 @@
+# ========================================
+# VPC 모듈
+# ========================================
+module "vpc" {
+  source = "../../modules/vpc"
+
+  vpc_name     = "${var.project}-${var.vpc_name}"
+  description  = "프로덕션 환경용 VPC 네트워크"
+  routing_mode = "GLOBAL" # 프로덕션 환경은 글로벌 라우팅을 사용합니다.
+
+  # 서브넷 정의
+  subnets = {
+    web = {
+      name                     = "${var.project}-${var.vpc_name}-web-subnet"
+      ip_cidr_range            = "10.2.1.0/24"
+      region                   = var.region
+      description              = "웹 서버용 서브넷"
+      private_ip_google_access = true
+    }
+    app = {
+      name                     = "${var.project}-${var.vpc_name}-app-subnet"
+      ip_cidr_range            = "10.2.2.0/24"
+      region                   = var.region
+      description              = "애플리케이션 서버용 서브넷"
+      private_ip_google_access = true
+    }
+    db = {
+      name                     = "${var.project}-${var.vpc_name}-db-subnet"
+      ip_cidr_range            = "10.2.3.0/24"
+      region                   = var.region
+      description              = "데이터베이스용 서브넷"
+      private_ip_google_access = true
+    }
+  }
+
+  # 방화벽 규칙 정의
+  firewall_rules = {
+    allow_http = {
+      name = "${var.vpc_name}-allow-http"
+      allow = [
+        {
+          protocol = "tcp"
+          ports    = ["80"]
+        }
+      ]
+      source_ranges = ["0.0.0.0/0"]
+      target_tags   = ["web-server"]
+      priority      = 1000
+    }
+    allow_https = {
+      name = "${var.vpc_name}-allow-https"
+      allow = [
+        {
+          protocol = "tcp"
+          ports    = ["443"]
+        }
+      ]
+      source_ranges = ["0.0.0.0/0"]
+      target_tags   = ["web-server"]
+      priority      = 1000
+    }
+    allow_ssh = {
+      name = "${var.vpc_name}-allow-ssh"
+      allow = [
+        {
+          protocol = "tcp"
+          ports    = ["22"]
+        }
+      ]
+      source_ranges = var.ssh_source_ranges # 프로덕션에서는 반드시 관리된 IP 대역만 허용해야 합니다.
+      priority      = 1000
+    }
+    allow_internal = {
+      name = "${var.vpc_name}-allow-internal"
+      allow = [
+        {
+          protocol = "tcp"
+          ports    = ["0-65535"]
+        },
+        {
+          protocol = "udp"
+          ports    = ["0-65535"]
+        },
+        {
+          protocol = "icmp"
+        }
+      ]
+      source_ranges = ["10.2.0.0/16"]
+      priority      = 65534
+    }
+  }
+
+  # Cloud NAT 설정
+  enable_nat     = var.enable_nat
+  nat_region     = var.region
+  router_asn     = 64514
+  nat_log_enable = true
+  nat_log_filter = "ALL"
+}
