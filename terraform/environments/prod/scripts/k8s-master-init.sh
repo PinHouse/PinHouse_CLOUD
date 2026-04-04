@@ -72,6 +72,50 @@ apt-mark hold kubelet kubeadm kubectl
 systemctl enable --now kubelet
 
 # ========================================
+# kubeadm 및 Calico 초기 설정 파일 생성
+# ========================================
+cat <<EOF >/root/kubeadm-config.yaml
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: ClusterConfiguration
+networking:
+  podSubnet: ${k8s_pod_cidr}
+  serviceSubnet: ${k8s_service_cidr}
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+cgroupDriver: systemd
+EOF
+
+cat <<EOF >/root/calico-custom-resources.yaml
+apiVersion: operator.tigera.io/v1
+kind: Installation
+metadata:
+  name: default
+spec:
+  calicoNetwork:
+    ipPools:
+      - blockSize: 26
+        cidr: ${k8s_pod_cidr}
+        encapsulation: IPIP
+        natOutgoing: Enabled
+        nodeSelector: all()
+EOF
+
+cat <<EOF >/root/install-calico.sh
+#!/usr/bin/env bash
+set -euxo pipefail
+
+kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/${calico_version}/manifests/operator-crds.yaml
+kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/${calico_version}/manifests/tigera-operator.yaml
+kubectl create -f /root/calico-custom-resources.yaml
+EOF
+
+chmod +x /root/install-calico.sh
+
+# ========================================
 # 후속 작업 안내
 # ========================================
-echo "마스터 노드 초기 설정이 완료되었습니다. 이후 kubeadm init 및 CNI 설치를 진행하세요."
+echo "마스터 노드 초기 설정이 완료되었습니다."
+echo "1. kubeadm init --config /root/kubeadm-config.yaml --upload-certs"
+echo "2. mkdir -p \$HOME/.kube && cp /etc/kubernetes/admin.conf \$HOME/.kube/config && chown \$(id -u):\$(id -g) \$HOME/.kube/config"
+echo "3. /root/install-calico.sh"
