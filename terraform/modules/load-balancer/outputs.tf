@@ -3,12 +3,16 @@
 # ========================================
 output "health_check_id" {
   description = "생성된 헬스 체크 ID입니다."
-  value       = var.create_health_check ? google_compute_health_check.health_check[0].id : null
+  value = var.create_health_check ? (
+    var.lb_type == "NETWORK" ? google_compute_region_health_check.regional_health_check[0].id : google_compute_health_check.health_check[0].id
+  ) : null
 }
 
 output "health_check_self_link" {
   description = "생성된 헬스 체크 self_link입니다."
-  value       = var.create_health_check ? google_compute_health_check.health_check[0].self_link : null
+  value = var.create_health_check ? (
+    var.lb_type == "NETWORK" ? google_compute_region_health_check.regional_health_check[0].self_link : google_compute_health_check.health_check[0].self_link
+  ) : null
 }
 
 # ========================================
