@@ -23,12 +23,12 @@ module "load_balancer" {
   backend_protocol    = "TCP"
   backend_timeout_sec = 30
   session_affinity    = "CLIENT_IP"
-  backend_groups = var.use_instance_group ? [
+  backend_groups = [
     {
       group          = module.k8s_worker_nodes.instance_group_instance_group
       balancing_mode = "CONNECTION"
     }
-  ] : []
+  ]
 
   # 포워딩 규칙 설정
   forwarding_rule_ip_protocol = "TCP"

@@ -37,7 +37,7 @@ variable "vpc_name" {
 variable "ssh_source_ranges" {
   description = "SSH 접근을 허용할 CIDR 목록입니다."
   type        = list(string)
-  default     = [] # 운영 환경에서는 반드시 허용 대역을 명시해야 합니다.
+  default     = []
 }
 
 variable "enable_nat" {
@@ -49,22 +49,16 @@ variable "enable_nat" {
 # ========================================
 # 컴퓨트 관련 변수
 # ========================================
-variable "use_instance_group" {
-  description = "관리형 인스턴스 그룹 사용 여부입니다."
-  type        = bool
-  default     = true
-}
-
-variable "create_web_instances" {
-  description = "개별 웹 인스턴스 생성 여부입니다."
-  type        = bool
-  default     = true
-}
-
-variable "instance_group_size" {
-  description = "관리형 인스턴스 그룹의 목표 인스턴스 수입니다."
+variable "k8s_master_instance_group_size" {
+  description = "Kubernetes 마스터 관리형 인스턴스 그룹의 목표 인스턴스 수입니다."
   type        = number
   default     = 1
+}
+
+variable "k8s_worker_instance_group_size" {
+  description = "Kubernetes 워커 관리형 인스턴스 그룹의 목표 인스턴스 수입니다."
+  type        = number
+  default     = 2
 }
 
 variable "enable_autoscaling" {
@@ -85,22 +79,28 @@ variable "autoscaling_max_replicas" {
   default     = 5
 }
 
-variable "web_machine_type" {
-  description = "웹 서버에 사용할 머신 타입입니다."
+variable "k8s_master_machine_type" {
+  description = "Kubernetes 마스터 노드에 사용할 머신 타입입니다."
   type        = string
-  default     = "e2-standard-2" # 운영 환경에 맞춘 고성능 인스턴스입니다.
+  default     = "e2-standard-2"
 }
 
-variable "web_machine_ssd" {
-  description = "웹 서버 부팅 디스크 크기(GB)입니다."
+variable "k8s_worker_machine_type" {
+  description = "Kubernetes 워커 노드에 사용할 머신 타입입니다."
+  type        = string
+  default     = "e2-standard-2"
+}
+
+variable "k8s_node_boot_disk_size_gb" {
+  description = "Kubernetes 노드 부팅 디스크 크기(GB)입니다."
   type        = number
   default     = 50
 }
 
-variable "web_source_image" {
-  description = "웹 서버 부팅 디스크에 사용할 이미지입니다."
+variable "k8s_node_source_image" {
+  description = "Kubernetes 노드 부팅 디스크에 사용할 이미지입니다."
   type        = string
-  default     = "debian-cloud/debian-11"
+  default     = "ubuntu-os-cloud/ubuntu-2204-lts"
 }
 
 variable "service_account_email" {
@@ -121,13 +121,13 @@ variable "create_storage_buckets" {
 variable "storage_location" {
   description = "스토리지 버킷을 생성할 위치입니다."
   type        = string
-  default     = "ASIA-NORTHEAST3" # 비용 절감을 위해 단일 리전을 기본값으로 사용합니다.
+  default     = "ASIA-NORTHEAST3"
 }
 
 variable "allowed_cors_origins" {
   description = "정적 자산 버킷에서 허용할 CORS Origin 목록입니다."
   type        = list(string)
-  default     = [] # 실제 서비스 도메인을 명시해야 합니다.
+  default     = []
 }
 
 # ========================================
@@ -137,18 +137,6 @@ variable "create_load_balancer" {
   description = "로드 밸런서 생성 여부입니다."
   type        = bool
   default     = true
-}
-
-variable "lb_type" {
-  description = "생성할 로드 밸런서 타입입니다. NETWORK, HTTP, HTTPS 중 하나를 사용합니다."
-  type        = string
-  default     = "NETWORK"
-}
-
-variable "ssl_certificates" {
-  description = "HTTPS 로드 밸런서에 연결할 SSL 인증서 self_link 목록입니다."
-  type        = list(string)
-  default     = []
 }
 
 # ========================================
