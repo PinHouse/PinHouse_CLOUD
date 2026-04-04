@@ -15,18 +15,16 @@ permissions:
   pull-requests: write
   id-token: write
 
-# 환경변수 설정
-env:
-  GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-  GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-  TERRAFORM_STATE_BUCKET: ${{ secrets.TERRAFORM_STATE_BUCKET }}
-  TERRAFORM_TFVARS_PROD: ${{ secrets.TERRAFORM_TFVARS_PROD }}
-
 jobs:
   # 변경된 Terraform 파일을 기준으로 영향받는 환경을 계산
   detect-changes:
     name: 변경 환경 감지
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+    env:
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ""
+      GCP_SERVICE_ACCOUNT: ""
+      TERRAFORM_STATE_BUCKET: ""
+      TERRAFORM_TFVARS_PROD: ""
     outputs:
       environments: ${{ steps.detect.outputs.environments || '[]' }}
     steps:
@@ -45,40 +43,80 @@ jobs:
           echo "변경된 파일 목록:"
           echo "$CHANGED_FILES"
 
-          # 변경된 환경을 JSON 배열 문자열로 수집합니다.
-          ENVIRONMENTS=""
-
-          # prod 환경 파일 변경 여부를 확인합니다.
+          # 변경된 환경 목록을 배열로 수집합니다.
+          ENVIRONMENTS=()
           if echo "$CHANGED_FILES" | grep -q "terraform/environments/prod/"; then
-            ENVIRONMENTS="$ENVIRONMENTS\"prod\","
+            ENVIRONMENTS+=("prod")
           fi
 
-          # 공통 모듈이 바뀌면 모든 환경에서 Plan을 수행합니다.
           if echo "$CHANGED_FILES" | grep -q "terraform/modules/"; then
-            ENVIRONMENTS="\"prod\""
+            ENVIRONMENTS+=("prod")
           fi
 
-          # 마지막 쉼표를 제거하고 JSON 배열 형식으로 변환합니다.
-          ENVIRONMENTS=$(echo "$ENVIRONMENTS" | sed 's/,$//')
-          ENVIRONMENTS="[$ENVIRONMENTS]"
+          # 중복을 제거한 뒤 JSON 배열 문자열로 변환합니다.
+          if [ ${#ENVIRONMENTS[@]} -eq 0 ]; then
+            ENVIRONMENTS_JSON='[]'
+          else
+            ENVIRONMENTS_JSON=$(printf '%s\n' "${ENVIRONMENTS[@]}" | sort -u | jq -R . | jq -cs .)
+          fi
 
-          echo "감지된 환경: $ENVIRONMENTS"
-          echo "environments=$ENVIRONMENTS" >> $GITHUB_OUTPUT
+          echo "감지된 환경: $ENVIRONMENTS_JSON"
+          echo "environments=$ENVIRONMENTS_JSON" >> "$GITHUB_OUTPUT"
+
+  # detect-changes 출력값을 바로 확인하기 위한 디버그 잡
+  debug-detect-changes:
+    name: 디버그 - 감지 결과
+    runs-on: ubuntu-22.04
+    needs: detect-changes
+    if: always()
+    env:
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ""
+      GCP_SERVICE_ACCOUNT: ""
+      TERRAFORM_STATE_BUCKET: ""
+      TERRAFORM_TFVARS_PROD: ""
+
+    steps:
+      - name: detect-changes 출력 확인
+        env:
+          ENVIRONMENTS: ${{ needs.detect-changes.outputs.environments }}
+        run: |
+          echo "detect-changes environments 원본: $ENVIRONMENTS"
+          printf 'detect-changes environments quoted: <%s>\n' "$ENVIRONMENTS"
+          echo "detect-changes environments 길이: ${#ENVIRONMENTS}"
+          echo "detect-changes environments 바이트:"
+          printf '%s' "$ENVIRONMENTS" | od -An -tx1
+
+          echo "detect-changes environments JSON 파싱 시도:"
+          if [ -n "$ENVIRONMENTS" ]; then
+            printf '%s\n' "$ENVIRONMENTS" | jq -c .
+          else
+            echo "값이 비어 있습니다."
+          fi
 
   # 환경별 Terraform init/fmt/validate/plan을 수행하고 결과 파일을 아티팩트로 남깁니다.
   terraform-plan-checks:
     name: 체크 - ${{ matrix.environment }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: detect-changes
     if: (needs.detect-changes.outputs.environments || '[]') != '[]' # 변경된 환경이 있을 때만 실행합니다.
+    env:
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      TERRAFORM_STATE_BUCKET: ${{ secrets.TERRAFORM_STATE_BUCKET }}
+      TERRAFORM_TFVARS_PROD: ${{ secrets.TERRAFORM_TFVARS_PROD }}
     strategy:
       fail-fast: false # 한 환경 실패가 다른 환경 확인을 막지 않도록 유지합니다.
       matrix:
-        environment: ${{ fromJson(needs.detect-changes.outputs.environments || '[]') }} # 감지된 환경별로 병렬 실행합니다.
+        environment: ${{ fromJson(needs.detect-changes.outputs.environments || '[]') }}
 
     steps:
       - name: 코드 체크아웃
         uses: actions/checkout@v4
+
+      - name: Matrix 디버그
+        run: |
+          echo "matrix.environment=${{ matrix.environment }}"
+          echo "needs.detect-changes.outputs.environments=${{ needs.detect-changes.outputs.environments }}"
 
       # 출력 파일 기반으로 결과를 다루기 위해 wrapper를 비활성화
       - name: Terraform 설치
@@ -120,16 +158,8 @@ jobs:
         if: steps.init.outcome == 'success'
         working-directory: terraform/environments/${{ matrix.environment }}
         run: |
-          case "${{ matrix.environment }}" in
-            prod)
-              TFVARS_CONTENT="${TERRAFORM_TFVARS_PROD}"
-              SECRET_NAME="TERRAFORM_TFVARS_PROD"
-              ;;
-            *)
-              echo "오류: 지원하지 않는 환경입니다: ${{ matrix.environment }}"
-              exit 1
-              ;;
-          esac
+          TFVARS_CONTENT="${TERRAFORM_TFVARS_PROD}"
+          SECRET_NAME="TERRAFORM_TFVARS_PROD"
 
           if [ -z "${TFVARS_CONTENT}" ]; then
             echo "오류: GitHub Secret ${SECRET_NAME}를 설정해야 합니다."
@@ -194,16 +224,13 @@ jobs:
   # 업로드된 결과 파일을 읽어 PR 댓글을 환경별로 갱신
   comment-plan-results:
     name: PR 댓글 갱신
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs:
       - detect-changes
       - terraform-plan-checks
     if: always() && (needs.detect-changes.outputs.environments || '[]') != '[]' && github.event_name == 'pull_request'
-
-    # 특정 환경 댓글 실패가 다른 환경 댓글을 막지 않도록 유지
     strategy:
       fail-fast: false
-      # 감지된 환경별로 댓글을 분리
       matrix:
         environment: ${{ fromJson(needs.detect-changes.outputs.environments || '[]') }}
 

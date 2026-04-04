@@ -60,8 +60,10 @@ resource "google_compute_instance" "nat_instance" {
     }
   }
 
-  tags   = concat(var.tags, [var.nat_instance_tag])
-  labels = var.labels
+  tags = concat(var.tags, [var.nat_instance_tag])
+  labels = {
+    for k, v in var.common_tags : lower(k) => lower(v)
+  }
 
   allow_stopping_for_update = true
 }

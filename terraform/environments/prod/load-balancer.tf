@@ -25,11 +25,15 @@ module "load_balancer" {
   backend_timeout_sec = 30
   session_affinity    = "CLIENT_IP"
   backend_groups = var.use_instance_group ? [
-    {
-      group           = module.web_servers.instance_group_instance_group
-      balancing_mode  = "UTILIZATION"
-      max_utilization = 0.8
-    }
+    merge(
+      {
+        group          = module.web_servers.instance_group_instance_group
+        balancing_mode = var.lb_type == "NETWORK" ? "CONNECTION" : "UTILIZATION"
+      },
+      var.lb_type == "NETWORK" ? {} : {
+        max_utilization = 0.8
+      }
+    )
   ] : []
   ssl_certificates = var.ssl_certificates
 

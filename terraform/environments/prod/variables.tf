@@ -64,7 +64,7 @@ variable "create_web_instances" {
 variable "instance_group_size" {
   description = "관리형 인스턴스 그룹의 목표 인스턴스 수입니다."
   type        = number
-  default     = 2
+  default     = 1
 }
 
 variable "enable_autoscaling" {
@@ -76,7 +76,7 @@ variable "enable_autoscaling" {
 variable "autoscaling_min_replicas" {
   description = "오토스케일링 최소 인스턴스 수입니다."
   type        = number
-  default     = 2
+  default     = 1
 }
 
 variable "autoscaling_max_replicas" {
@@ -89,6 +89,12 @@ variable "web_machine_type" {
   description = "웹 서버에 사용할 머신 타입입니다."
   type        = string
   default     = "e2-standard-2" # 운영 환경에 맞춘 고성능 인스턴스입니다.
+}
+
+variable "web_machine_ssd" {
+  description = "웹 서버 부팅 디스크 크기(GB)입니다."
+  type        = number
+  default     = 50
 }
 
 variable "web_source_image" {
@@ -115,7 +121,7 @@ variable "create_storage_buckets" {
 variable "storage_location" {
   description = "스토리지 버킷을 생성할 위치입니다."
   type        = string
-  default     = "ASIA" # 운영 환경에서는 멀티 리전을 기본값으로 사용합니다.
+  default     = "ASIA-NORTHEAST3" # 비용 절감을 위해 단일 리전을 기본값으로 사용합니다.
 }
 
 variable "allowed_cors_origins" {
@@ -143,4 +149,18 @@ variable "ssl_certificates" {
   description = "HTTPS 로드 밸런서에 연결할 SSL 인증서 self_link 목록입니다."
   type        = list(string)
   default     = []
+}
+
+# ========================================
+# 공통 태그 변수
+# ========================================
+variable "common_tags" {
+  description = "공통 태그입니다."
+  type        = map(string)
+  default = {
+    project     = "pinhouse"
+    environment = "prod"
+    version     = "v1"
+    managed_by  = "terraform"
+  }
 }

@@ -127,6 +127,15 @@ resource "google_compute_region_backend_service" "backend_service" {
 
   # 선택적으로 연결 드레이닝 타임아웃을 적용합니다.
   connection_draining_timeout_sec = var.connection_draining_timeout
+
+  lifecycle {
+    precondition {
+      condition = alltrue([
+        for backend in var.backend_groups : lookup(backend, "balancing_mode", "CONNECTION") == "CONNECTION"
+      ])
+      error_message = "NETWORK 로드 밸런서의 backend_groups balancing_mode는 CONNECTION만 사용할 수 있습니다."
+    }
+  }
 }
 
 # ========================================
