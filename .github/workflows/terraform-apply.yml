@@ -1,0 +1,178 @@
+# Terraform Apply 수동 파이프라인
+name: PinHouse Terraform Apply 파이프라인
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "적용할 환경을 선택합니다. dev, staging, prod 중 하나를 사용합니다."
+        required: true
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+      confirm:
+        description: '"apply"를 입력해야 실제 적용이 진행됩니다.'
+        required: true
+        type: string
+
+# 워크플로우 실행에 필요한 최소 권한입니다.
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+  GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+  TERRAFORM_STATE_BUCKET: ${{ vars.TERRAFORM_STATE_BUCKET }}
+
+jobs:
+  terraform-apply:
+    name: Apply - ${{ github.event.inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+
+    steps:
+      - name: 적용 확인 값 검증
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "apply" ]; then
+            echo "오류: 적용을 진행하려면 confirm 값에 apply를 입력해야 합니다."
+            exit 1
+          fi
+
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: 환경 설정 파일 확인
+        id: environment-config
+        working-directory: terraform/environments/${{ github.event.inputs.environment }}
+        run: |
+          if [ ! -f terraform.tfvars ]; then
+            echo "오류: terraform/environments/${{ github.event.inputs.environment }}/terraform.tfvars 파일이 필요합니다."
+            exit 1
+          fi
+
+          PROJECT_ID=$(sed -n 's/^[[:space:]]*project_id[[:space:]]*=[[:space:]]*"\([^"]*\)".*$/\1/p' terraform.tfvars | head -n 1)
+
+          if [ -z "$PROJECT_ID" ]; then
+            echo "오류: terraform.tfvars 에 project_id 값을 설정해야 합니다."
+            exit 1
+          fi
+
+          echo "project_id=$PROJECT_ID" >> "$GITHUB_OUTPUT"
+          echo "secret_name=terraform-${{ github.event.inputs.environment }}-tfvars" >> "$GITHUB_OUTPUT"
+
+      - name: Terraform 설치
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+          terraform_wrapper: false
+
+      - name: GCP 인증
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+
+      - name: gcloud 설정
+        uses: google-github-actions/setup-gcloud@v3
+        with:
+          version: ">= 363.0.0"
+          project_id: ${{ steps.environment-config.outputs.project_id }}
+
+      - name: Secret Manager tfvars 존재 확인
+        id: secret-tfvars-check
+        run: |
+          if gcloud secrets describe "${{ steps.environment-config.outputs.secret_name }}" --project="${{ steps.environment-config.outputs.project_id }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Secret Manager tfvars 조회
+        id: secret-tfvars
+        if: steps.secret-tfvars-check.outputs.exists == 'true'
+        uses: google-github-actions/get-secretmanager-secrets@v3
+        with:
+          secrets: |-
+            terraform_tfvars:${{ steps.environment-config.outputs.project_id }}/${{ steps.environment-config.outputs.secret_name }}
+
+      - name: Secret tfvars 파일 생성
+        if: steps.secret-tfvars-check.outputs.exists == 'true'
+        working-directory: terraform/environments/${{ github.event.inputs.environment }}
+        env:
+          SECRET_TFVARS_CONTENT: ${{ steps.secret-tfvars.outputs.terraform_tfvars }}
+        run: |
+          printf '%s' "$SECRET_TFVARS_CONTENT" > secret.auto.tfvars
+
+      - name: State 버킷 변수 확인
+        run: |
+          if [ -z "${{ env.TERRAFORM_STATE_BUCKET }}" ]; then
+            echo "오류: GitHub Variables에 TERRAFORM_STATE_BUCKET을 설정해야 합니다."
+            exit 1
+          fi
+
+      - name: Terraform 초기화
+        id: init
+        working-directory: terraform/environments/${{ github.event.inputs.environment }}
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ env.TERRAFORM_STATE_BUCKET }}" \
+            -backend-config="prefix=terraform/${{ github.event.inputs.environment }}/state"
+
+      - name: Terraform Plan 실행
+        id: plan
+        working-directory: terraform/environments/${{ github.event.inputs.environment }}
+        run: |
+          terraform plan -no-color -out=tfplan
+          terraform show -no-color tfplan > plan_output.txt
+
+      - name: Plan 결과 업로드
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${{ github.event.inputs.environment }}-${{ github.run_number }}
+          path: |
+            terraform/environments/${{ github.event.inputs.environment }}/tfplan
+            terraform/environments/${{ github.event.inputs.environment }}/plan_output.txt
+
+      - name: Terraform Apply 실행
+        id: apply
+        working-directory: terraform/environments/${{ github.event.inputs.environment }}
+        run: |
+          terraform apply -auto-approve tfplan 2>&1 | tee apply_output.txt
+
+      - name: Apply 출력 업로드
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tfapply-${{ github.event.inputs.environment }}-${{ github.run_number }}
+          path: terraform/environments/${{ github.event.inputs.environment }}/apply_output.txt
+
+      - name: 배포 요약 생성
+        if: always()
+        run: |
+          echo "## Terraform Apply 요약 - ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**환경:** ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "**실행 결과:** ${{ steps.apply.outcome }}" >> $GITHUB_STEP_SUMMARY
+          echo "**실행 사용자:** @${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "**커밋 SHA:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f terraform/environments/${{ github.event.inputs.environment }}/apply_output.txt ]; then
+            echo "<details><summary>Apply 출력 보기</summary>" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat terraform/environments/${{ github.event.inputs.environment }}/apply_output.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "</details>" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: 실패 시 워크플로우 종료
+        if: failure()
+        run: |
+          echo "::error::${{ github.event.inputs.environment }} 환경 Terraform apply 실행에 실패했습니다."
+          exit 1

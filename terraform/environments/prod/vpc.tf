@@ -4,9 +4,9 @@
 module "vpc" {
   source = "../../modules/vpc"
 
-  vpc_name     = "${var.project}-${var.vpc_name}"
+  vpc_name     = "${var.project}-${var.environment}-vpc"
   description  = "프로덕션 환경용 VPC 네트워크"
-  routing_mode = "GLOBAL" # 프로덕션 환경은 글로벌 라우팅을 사용합니다.
+  routing_mode = "GLOBAL"
 
   # 서브넷 정의
   subnets = {

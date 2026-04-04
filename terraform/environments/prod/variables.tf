@@ -4,6 +4,7 @@
 variable "project_id" {
   description = "배포 대상 GCP 프로젝트 ID입니다."
   type        = string
+  default     = "prod-pinhouse"
 }
 
 variable "project" {
