@@ -47,11 +47,6 @@ jobs:
           # 변경된 환경을 JSON 배열 문자열로 수집합니다.
           ENVIRONMENTS=""
 
-#          # dev 환경 파일 변경 여부를 확인합니다.
-#          if echo "$CHANGED_FILES" | grep -q "terraform/environments/dev/"; then
-#            ENVIRONMENTS="$ENVIRONMENTS\"dev\","
-#          fi
-
           # prod 환경 파일 변경 여부를 확인합니다.
           if echo "$CHANGED_FILES" | grep -q "terraform/environments/prod/"; then
             ENVIRONMENTS="$ENVIRONMENTS\"prod\","
