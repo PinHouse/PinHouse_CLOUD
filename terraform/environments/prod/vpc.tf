@@ -34,62 +34,7 @@ module "vpc" {
   }
 
   # 방화벽 규칙 정의
-  firewall_rules = {
-    allow_http = {
-      name = "${var.vpc_name}-allow-http"
-      allow = [
-        {
-          protocol = "tcp"
-          ports    = ["80"]
-        }
-      ]
-      source_ranges = ["0.0.0.0/0"]
-      target_tags   = ["k8s-worker"]
-      priority      = 1000
-    }
-    allow_https = {
-      name = "${var.vpc_name}-allow-https"
-      allow = [
-        {
-          protocol = "tcp"
-          ports    = ["443"]
-        }
-      ]
-      source_ranges = ["0.0.0.0/0"]
-      target_tags   = ["k8s-worker"]
-      priority      = 1000
-    }
-    allow_ssh = {
-      name = "${var.vpc_name}-allow-ssh"
-      allow = [
-        {
-          protocol = "tcp"
-          ports    = ["22"]
-        }
-      ]
-      source_ranges = var.ssh_source_ranges
-      target_tags   = ["k8s-master", "k8s-worker"]
-      priority      = 1000
-    }
-    allow_internal = {
-      name = "${var.vpc_name}-allow-internal"
-      allow = [
-        {
-          protocol = "tcp"
-          ports    = ["0-65535"]
-        },
-        {
-          protocol = "udp"
-          ports    = ["0-65535"]
-        },
-        {
-          protocol = "icmp"
-        }
-      ]
-      source_ranges = ["10.2.0.0/16"]
-      priority      = 65534
-    }
-  }
+  firewall_rules = local.prod_firewall_rules
 
   # Cloud NAT 설정
   enable_nat     = var.enable_nat

@@ -35,7 +35,37 @@ variable "vpc_name" {
 }
 
 variable "ssh_source_ranges" {
-  description = "SSH 접근을 허용할 CIDR 목록입니다."
+  description = "직접 SSH 접근을 허용할 CIDR 목록입니다. 비워두면 IAP만 허용합니다."
+  type        = list(string)
+  default     = []
+}
+
+variable "enable_iap_ssh" {
+  description = "IAP TCP 터널 기반 SSH 접근 허용 여부입니다."
+  type        = bool
+  default     = true
+}
+
+variable "iap_ssh_source_ranges" {
+  description = "IAP TCP 터널이 인스턴스로 접근할 때 허용할 Google 관리 소스 CIDR 목록입니다."
+  type        = list(string)
+  default     = ["35.235.240.0/20"]
+}
+
+variable "management_target_tags" {
+  description = "SSH 및 IAP 관리 접근을 허용할 인스턴스 태그 목록입니다."
+  type        = list(string)
+  default     = ["k8s-master", "k8s-worker"]
+}
+
+variable "iap_ssh_members" {
+  description = "IAP 터널과 일반 OS Login 권한을 부여할 IAM 주체 목록입니다."
+  type        = list(string)
+  default     = []
+}
+
+variable "iap_ssh_admin_members" {
+  description = "IAP 터널과 관리자 OS Login 권한을 부여할 IAM 주체 목록입니다."
   type        = list(string)
   default     = []
 }
@@ -101,6 +131,24 @@ variable "k8s_node_source_image" {
   description = "Kubernetes 노드 부팅 디스크에 사용할 이미지입니다."
   type        = string
   default     = "ubuntu-os-cloud/ubuntu-2204-lts"
+}
+
+variable "k8s_pod_cidr" {
+  description = "Kubernetes Pod CIDR 대역입니다. Calico IPPool과 kubeadm podSubnet에 동일하게 사용합니다."
+  type        = string
+  default     = "192.168.0.0/16"
+}
+
+variable "k8s_service_cidr" {
+  description = "Kubernetes Service CIDR 대역입니다."
+  type        = string
+  default     = "10.96.0.0/12"
+}
+
+variable "calico_version" {
+  description = "초기 설치에 사용할 Calico 오픈소스 릴리스 버전입니다."
+  type        = string
+  default     = "v3.31.4"
 }
 
 variable "service_account_email" {

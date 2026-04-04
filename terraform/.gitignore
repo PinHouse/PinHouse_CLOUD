@@ -27,5 +27,5 @@ terraform.rc
 # Ignore backup files
 *.backup
 
-# Ignore lock files (optional - 팀에서 결정)
-# .terraform.lock.hcl
+# Ignore lock files
+.terraform.lock.hcl
