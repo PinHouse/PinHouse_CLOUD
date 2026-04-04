@@ -51,7 +51,7 @@ variable "boot_disk_type" {
 variable "network_tier" {
   description = "NAT 인스턴스 외부 IP에 사용할 네트워크 티어입니다."
   type        = string
-  default     = "PREMIUM"
+  default     = "STANDARD"
 }
 
 # ========================================
