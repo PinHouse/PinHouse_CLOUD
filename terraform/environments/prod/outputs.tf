@@ -17,16 +17,31 @@ output "subnets" {
 }
 
 # ========================================
-# 웹 서버 출력값
+# Kubernetes 출력값
 # ========================================
-output "web_instances" {
-  description = "생성된 웹 인스턴스 정보입니다."
-  value       = module.web_servers.instances
+output "k8s_master_instances" {
+  description = "생성된 Kubernetes 마스터 인스턴스 정보입니다."
+  value       = module.k8s_master_nodes.instances
+}
+
+output "k8s_worker_instances" {
+  description = "생성된 Kubernetes 워커 인스턴스 정보입니다."
+  value       = module.k8s_worker_nodes.instances
+}
+
+output "k8s_master_instance_group_id" {
+  description = "생성된 Kubernetes 마스터 인스턴스 그룹 ID입니다."
+  value       = module.k8s_master_nodes.instance_group_id
+}
+
+output "k8s_worker_instance_group_id" {
+  description = "생성된 Kubernetes 워커 인스턴스 그룹 ID입니다."
+  value       = module.k8s_worker_nodes.instance_group_id
 }
 
 output "instance_group_id" {
-  description = "생성된 인스턴스 그룹 ID입니다."
-  value       = module.web_servers.instance_group_id
+  description = "생성된 Kubernetes 워커 인스턴스 그룹 ID입니다."
+  value       = module.k8s_worker_nodes.instance_group_id
 }
 
 # ========================================

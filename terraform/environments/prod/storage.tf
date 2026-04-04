@@ -16,7 +16,7 @@ module "storage" {
   buckets = merge(
     var.create_storage_buckets ? tomap({
       static_assets = {
-        name                        = "${var.project_id}-${var.environment}"
+        name                        = "${var.project}-${var.environment}"
         storage_class               = "STANDARD"
         uniform_bucket_level_access = true
         versioning_enabled          = true

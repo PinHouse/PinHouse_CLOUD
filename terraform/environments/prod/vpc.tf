@@ -44,7 +44,7 @@ module "vpc" {
         }
       ]
       source_ranges = ["0.0.0.0/0"]
-      target_tags   = ["web-server"]
+      target_tags   = ["k8s-worker"]
       priority      = 1000
     }
     allow_https = {
@@ -56,7 +56,7 @@ module "vpc" {
         }
       ]
       source_ranges = ["0.0.0.0/0"]
-      target_tags   = ["web-server"]
+      target_tags   = ["k8s-worker"]
       priority      = 1000
     }
     allow_ssh = {
@@ -68,6 +68,7 @@ module "vpc" {
         }
       ]
       source_ranges = var.ssh_source_ranges # 프로덕션에서는 반드시 관리된 IP 대역만 허용해야 합니다.
+      target_tags   = ["k8s-master", "k8s-worker"]
       priority      = 1000
     }
     allow_internal = {
