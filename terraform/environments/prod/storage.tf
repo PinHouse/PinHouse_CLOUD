@@ -20,8 +20,8 @@ module "storage" {
         storage_class               = "STANDARD"
         uniform_bucket_level_access = true
         versioning_enabled          = true
-        force_destroy               = false      # 운영 버킷은 강제 삭제를 사용하지 않습니다.
-        public_access_prevention    = "enforced" # 공개 액세스를 차단합니다.
+        force_destroy               = false
+        public_access_prevention    = "enforced"
 
         # 365일이 지난 정적 파일은 Nearline 클래스로 이동합니다.
         lifecycle_rules = [

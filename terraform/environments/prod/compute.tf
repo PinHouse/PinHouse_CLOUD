@@ -45,7 +45,8 @@ module "k8s_master_nodes" {
 module "k8s_worker_nodes" {
   source = "../../modules/compute"
 
-  name_prefix = "${var.project}-${var.environment}-k8s-worker"
+  # 서브넷 이동은 MIG 인플레이스 업데이트가 불가하므로 새 이름으로 교체합니다.
+  name_prefix = "${var.project}-${var.environment}-k8s-workers"
   network     = module.vpc.vpc_self_link
   subnetwork  = module.vpc.subnets["app"].self_link
 

@@ -189,6 +189,10 @@ resource "google_compute_instance_group_manager" "instance_group" {
     max_surge_fixed       = var.max_surge_fixed
     max_unavailable_fixed = var.max_unavailable_fixed
   }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 # ========================================

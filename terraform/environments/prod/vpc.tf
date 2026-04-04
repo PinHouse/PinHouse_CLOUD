@@ -67,7 +67,7 @@ module "vpc" {
           ports    = ["22"]
         }
       ]
-      source_ranges = var.ssh_source_ranges # 프로덕션에서는 반드시 관리된 IP 대역만 허용해야 합니다.
+      source_ranges = var.ssh_source_ranges
       target_tags   = ["k8s-master", "k8s-worker"]
       priority      = 1000
     }
