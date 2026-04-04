@@ -12,20 +12,6 @@ variable "region" {
   default     = "asia-northeast3"
 }
 
-variable "lb_type" {
-  description = "로드 밸런서 타입입니다. NETWORK, HTTP, HTTPS 중 하나를 사용합니다."
-  type        = string
-  default     = "NETWORK"
-
-  validation {
-    condition     = contains(["NETWORK", "HTTP", "HTTPS"], var.lb_type)
-    error_message = "lb_type은 NETWORK, HTTP, HTTPS 중 하나여야 합니다."
-  }
-}
-
-# ========================================
-# 헬스 체크 변수
-# ========================================
 variable "create_health_check" {
   description = "헬스 체크 생성 여부입니다."
   type        = bool
@@ -153,50 +139,3 @@ variable "network_tier" {
 # ========================================
 # HTTPS 및 CDN 관련 변수
 # ========================================
-variable "ssl_certificates" {
-  description = "HTTPS 로드 밸런서에 연결할 SSL 인증서 self_link 목록입니다."
-  type        = list(string)
-  default     = []
-}
-
-variable "enable_cdn" {
-  description = "CDN 사용 여부입니다."
-  type        = bool
-  default     = false
-}
-
-variable "cdn_cache_mode" {
-  description = "CDN 캐시 모드입니다. CACHE_ALL_STATIC, USE_ORIGIN_HEADERS, FORCE_CACHE_ALL 중 하나를 사용합니다."
-  type        = string
-  default     = "USE_ORIGIN_HEADERS"
-}
-
-variable "cdn_default_ttl" {
-  description = "CDN 기본 TTL(초)입니다."
-  type        = number
-  default     = 3600
-}
-
-variable "cdn_max_ttl" {
-  description = "CDN 최대 TTL(초)입니다."
-  type        = number
-  default     = 86400
-}
-
-variable "cdn_client_ttl" {
-  description = "클라이언트 응답에 사용할 CDN TTL(초)입니다."
-  type        = number
-  default     = 3600
-}
-
-variable "cdn_negative_caching" {
-  description = "CDN 네거티브 캐싱 사용 여부입니다."
-  type        = bool
-  default     = false
-}
-
-variable "cdn_serve_while_stale" {
-  description = "원본 응답 지연 시 오래된 콘텐츠를 유지할 시간(초)입니다."
-  type        = number
-  default     = 86400
-}
