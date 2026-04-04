@@ -1,0 +1,309 @@
+# Terraform 변경 감지 Plan 파이프라인
+name: PinHouse Terraform Plan 파이프라인
+
+on:
+  pull_request:
+    branches:
+      - main
+    # Terraform 디렉터리 변경만 감지
+    paths:
+      - "terraform/**"
+
+# 워크플로우 실행에 필요한 최소 권한
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
+# 환경변수 설정
+env:
+  GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+  GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+  TERRAFORM_STATE_BUCKET: ${{ secrets.TERRAFORM_STATE_BUCKET }}
+
+jobs:
+  # 변경된 Terraform 파일을 기준으로 영향받는 환경을 계산
+  detect-changes:
+    name: 변경 환경 감지
+    runs-on: ubuntu-latest
+    outputs:
+      environments: ${{ steps.detect.outputs.environments }}
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 변경된 환경 감지
+        id: detect
+        run: |
+          # PR 기준 브랜치와 비교해 변경 파일 목록을 가져옵니다.
+          git fetch origin ${{ github.base_ref }}
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+
+          echo "변경된 파일 목록:"
+          echo "$CHANGED_FILES"
+
+          # 변경된 환경을 JSON 배열 문자열로 수집합니다.
+          ENVIRONMENTS=""
+
+          # prod 환경 파일 변경 여부를 확인합니다.
+          if echo "$CHANGED_FILES" | grep -q "terraform/environments/prod/"; then
+            ENVIRONMENTS="$ENVIRONMENTS\"prod\","
+          fi
+
+          # 공통 모듈이 바뀌면 모든 환경에서 Plan을 수행합니다.
+          if echo "$CHANGED_FILES" | grep -q "terraform/modules/"; then
+            ENVIRONMENTS="\"prod\""
+          fi
+
+          # 마지막 쉼표를 제거하고 JSON 배열 형식으로 변환합니다.
+          ENVIRONMENTS=$(echo "$ENVIRONMENTS" | sed 's/,$//')
+          ENVIRONMENTS="[$ENVIRONMENTS]"
+
+          echo "감지된 환경: $ENVIRONMENTS"
+          echo "environments=$ENVIRONMENTS" >> $GITHUB_OUTPUT
+
+  # 환경별 Terraform init/fmt/validate/plan을 수행하고 결과 파일을 아티팩트로 남깁니다.
+  terraform-plan-checks:
+    name: 체크 - ${{ matrix.environment }}
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.environments != '[]' # 변경된 환경이 있을 때만 실행합니다.
+    strategy:
+      fail-fast: false # 한 환경 실패가 다른 환경 확인을 막지 않도록 유지합니다.
+      matrix:
+        environment: ${{ fromJson(needs.detect-changes.outputs.environments) }} # 감지된 환경별로 병렬 실행합니다.
+
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      # 출력 파일 기반으로 결과를 다루기 위해 wrapper를 비활성화
+      - name: Terraform 설치
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+          terraform_wrapper: false
+
+      - name: GCP 인증
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.GCP_SERVICE_ACCOUNT }}
+
+      - name: State 버킷 변수 확인
+        id: state-bucket
+        run: |
+          if [ -z "${{ env.TERRAFORM_STATE_BUCKET }}" ]; then
+            echo "오류: GitHub Variables에 TERRAFORM_STATE_BUCKET을 설정해야 합니다."
+            exit 1
+          fi
+
+      - name: Terraform 초기화
+        id: init
+        if: steps.state-bucket.outcome == 'success'
+        working-directory: terraform/environments/${{ matrix.environment }}
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ env.TERRAFORM_STATE_BUCKET }}" \
+            -backend-config="prefix=terraform/${{ matrix.environment }}/state"
+
+      - name: Terraform 포맷 확인
+        id: fmt
+        if: steps.init.outcome == 'success'
+        working-directory: terraform/environments/${{ matrix.environment }}
+        run: terraform fmt -check
+
+      - name: Terraform 유효성 검사
+        id: validate
+        if: steps.init.outcome == 'success'
+        working-directory: terraform/environments/${{ matrix.environment }}
+        run: terraform validate -no-color
+
+      - name: Terraform Plan 실행
+        id: plan
+        if: steps.init.outcome == 'success' && steps.validate.outcome == 'success'
+        working-directory: terraform/environments/${{ matrix.environment }}
+        run: |
+          terraform plan -no-color -out=tfplan
+          terraform show -no-color tfplan > plan_output.txt
+
+      - name: 결과 메타데이터 생성
+        if: always()
+        working-directory: terraform/environments/${{ matrix.environment }}
+        env:
+          STATE_BUCKET_OUTCOME: ${{ steps.state-bucket.outcome }}
+          INIT_OUTCOME: ${{ steps.init.outcome }}
+          FMT_OUTCOME: ${{ steps.fmt.outcome }}
+          VALIDATE_OUTCOME: ${{ steps.validate.outcome }}
+          PLAN_OUTCOME: ${{ steps.plan.outcome }}
+        run: |
+          # plan 출력 파일이 없으면 댓글용 안내 문구를 생성합니다.
+          if [ ! -f plan_output.txt ]; then
+            echo "Plan 출력 파일이 생성되지 않았습니다." > plan_output.txt
+          fi
+
+          # plan 출력 파일 생성
+          cat > plan_status.json <<EOF
+          {
+            "environment": "${{ matrix.environment }}",
+            "state_bucket": "${STATE_BUCKET_OUTCOME:-skipped}",
+            "init": "${INIT_OUTCOME:-skipped}",
+            "fmt": "${FMT_OUTCOME:-skipped}",
+            "validate": "${VALIDATE_OUTCOME:-skipped}",
+            "plan": "${PLAN_OUTCOME:-skipped}"
+          }
+          EOF
+
+      - name: Plan 결과 업로드
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${{ matrix.environment }}
+          path: |
+            terraform/environments/${{ matrix.environment }}/plan_output.txt
+            terraform/environments/${{ matrix.environment }}/plan_status.json
+
+  # 업로드된 결과 파일을 읽어 PR 댓글을 환경별로 갱신
+  comment-plan-results:
+    name: PR 댓글 갱신
+    runs-on: ubuntu-latest
+    needs:
+      - detect-changes
+      - terraform-plan-checks
+    if: always() && needs.detect-changes.outputs.environments != '[]' && github.event_name == 'pull_request'
+
+    # 특정 환경 댓글 실패가 다른 환경 댓글을 막지 않도록 유지
+    strategy:
+      fail-fast: false
+      # 감지된 환경별로 댓글을 분리
+      matrix:
+        environment: ${{ fromJson(needs.detect-changes.outputs.environments) }}
+
+    steps:
+      - name: Plan 결과 다운로드
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan-${{ matrix.environment }}
+          path: artifact
+
+      - name: Plan 상태 읽기
+        id: plan-status
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const status = JSON.parse(fs.readFileSync('artifact/plan_status.json', 'utf8'));
+            core.setOutput('environment', status.environment);
+            core.setOutput('state_bucket', status.state_bucket);
+            core.setOutput('init', status.init);
+            core.setOutput('fmt', status.fmt);
+            core.setOutput('validate', status.validate);
+            core.setOutput('plan', status.plan);
+
+      - name: Plan 출력 길이 조정
+        run: |
+          MAX_LENGTH=65000
+          PLAN_FILE="artifact/plan_output.txt"
+          TRIMMED_FILE="artifact/plan_output_trimmed.txt"
+
+          if [ "$(wc -c < "$PLAN_FILE")" -gt "$MAX_LENGTH" ]; then
+            head -c "$MAX_LENGTH" "$PLAN_FILE" > "$TRIMMED_FILE"
+            printf '\n\n... (길이 제한으로 일부만 표시됩니다)\n' >> "$TRIMMED_FILE"
+          else
+            cp "$PLAN_FILE" "$TRIMMED_FILE"
+          fi
+
+      - name: 댓글 본문 생성
+        env:
+          STATE_BUCKET_STATUS: ${{ steps.plan-status.outputs.state_bucket }}
+          INIT_STATUS: ${{ steps.plan-status.outputs.init }}
+          FMT_STATUS: ${{ steps.plan-status.outputs.fmt }}
+          VALIDATE_STATUS: ${{ steps.plan-status.outputs.validate }}
+          PLAN_STATUS: ${{ steps.plan-status.outputs.plan }}
+        run: |
+          status_emoji() {
+            case "$1" in
+              success) echo "✅" ;;
+              failure) echo "❌" ;;
+              skipped) echo "⏭️" ;;
+              cancelled) echo "🚫" ;;
+              *) echo "$1" ;;
+            esac
+          }
+
+          STATE_BUCKET_EMOJI=$(status_emoji "$STATE_BUCKET_STATUS")
+          INIT_EMOJI=$(status_emoji "$INIT_STATUS")
+          FMT_EMOJI=$(status_emoji "$FMT_STATUS")
+          VALIDATE_EMOJI=$(status_emoji "$VALIDATE_STATUS")
+          PLAN_EMOJI=$(status_emoji "$PLAN_STATUS")
+
+          cat > artifact/comment_body.md <<EOF
+          ## Terraform Plan - \`${{ steps.plan-status.outputs.environment }}\` 환경
+
+          #### State 버킷 변수 확인 📦 ${STATE_BUCKET_EMOJI}
+          #### 초기화 결과 ⚙️ ${INIT_EMOJI}
+          #### 포맷 검사 결과 🖌 ${FMT_EMOJI}
+          #### 유효성 검사 결과 🤖 ${VALIDATE_EMOJI}
+          #### Plan 결과 📖 ${PLAN_EMOJI}
+
+          <details><summary>Plan 상세 보기</summary>
+
+          \`\`\`terraform
+          EOF
+          cat artifact/plan_output_trimmed.txt >> artifact/comment_body.md
+          cat >> artifact/comment_body.md <<EOF
+
+          \`\`\`
+
+          </details>
+
+          *실행 사용자: @${{ github.actor }}, 이벤트: \`${{ github.event_name }}\`*
+          EOF
+
+      - name: 기존 PR 댓글 조회
+        id: existing-comment
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const marker = `Terraform Plan - \`${{ steps.plan-status.outputs.environment }}\` 환경`;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment => {
+              return comment.user.type === 'Bot' && comment.body.includes(marker);
+            });
+            core.setOutput('comment_id', botComment ? String(botComment.id) : '');
+
+      - name: PR 댓글 생성 또는 갱신
+        uses: actions/github-script@v7
+        env:
+          COMMENT_ID: ${{ steps.existing-comment.outputs.comment_id }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('artifact/comment_body.md', 'utf8');
+            const commentId = process.env.COMMENT_ID;
+
+            if (commentId) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: Number(commentId),
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
