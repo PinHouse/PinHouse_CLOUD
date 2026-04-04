@@ -217,15 +217,37 @@ jobs:
           fi
 
       - name: 댓글 본문 생성
+        env:
+          STATE_BUCKET_STATUS: ${{ steps.plan-status.outputs.state_bucket }}
+          INIT_STATUS: ${{ steps.plan-status.outputs.init }}
+          FMT_STATUS: ${{ steps.plan-status.outputs.fmt }}
+          VALIDATE_STATUS: ${{ steps.plan-status.outputs.validate }}
+          PLAN_STATUS: ${{ steps.plan-status.outputs.plan }}
         run: |
+          status_emoji() {
+            case "$1" in
+              success) echo "✅" ;;
+              failure) echo "❌" ;;
+              skipped) echo "⏭️" ;;
+              cancelled) echo "🚫" ;;
+              *) echo "$1" ;;
+            esac
+          }
+
+          STATE_BUCKET_EMOJI=$(status_emoji "$STATE_BUCKET_STATUS")
+          INIT_EMOJI=$(status_emoji "$INIT_STATUS")
+          FMT_EMOJI=$(status_emoji "$FMT_STATUS")
+          VALIDATE_EMOJI=$(status_emoji "$VALIDATE_STATUS")
+          PLAN_EMOJI=$(status_emoji "$PLAN_STATUS")
+
           cat > artifact/comment_body.md <<EOF
           ## Terraform Plan - \`${{ steps.plan-status.outputs.environment }}\` 환경
 
-          #### State 버킷 변수 확인 📦 \`${{ steps.plan-status.outputs.state_bucket }}\`
-          #### 초기화 결과 ⚙️ \`${{ steps.plan-status.outputs.init }}\`
-          #### 포맷 검사 결과 🖌 \`${{ steps.plan-status.outputs.fmt }}\`
-          #### 유효성 검사 결과 🤖 \`${{ steps.plan-status.outputs.validate }}\`
-          #### Plan 결과 📖 \`${{ steps.plan-status.outputs.plan }}\`
+          #### State 버킷 변수 확인 📦 ${STATE_BUCKET_EMOJI}
+          #### 초기화 결과 ⚙️ ${INIT_EMOJI}
+          #### 포맷 검사 결과 🖌 ${FMT_EMOJI}
+          #### 유효성 검사 결과 🤖 ${VALIDATE_EMOJI}
+          #### Plan 결과 📖 ${PLAN_EMOJI}
 
           <details><summary>Plan 상세 보기</summary>
 
