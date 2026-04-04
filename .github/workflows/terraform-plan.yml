@@ -20,6 +20,8 @@ env:
   GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
   GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
   TERRAFORM_STATE_BUCKET: ${{ secrets.TERRAFORM_STATE_BUCKET }}
+  TERRAFORM_TFVARS_DEV: ${{ secrets.TERRAFORM_TFVARS_DEV }}
+  TERRAFORM_TFVARS_PROD: ${{ secrets.TERRAFORM_TFVARS_PROD }}
 
 jobs:
   # 변경된 Terraform 파일을 기준으로 영향받는 환경을 계산
@@ -96,7 +98,7 @@ jobs:
         id: state-bucket
         run: |
           if [ -z "${{ env.TERRAFORM_STATE_BUCKET }}" ]; then
-            echo "오류: GitHub Variables에 TERRAFORM_STATE_BUCKET을 설정해야 합니다."
+            echo "오류: GitHub Secrets에 TERRAFORM_STATE_BUCKET을 설정해야 합니다."
             exit 1
           fi
 
@@ -109,6 +111,30 @@ jobs:
             -backend-config="bucket=${{ env.TERRAFORM_STATE_BUCKET }}" \
             -backend-config="prefix=terraform/${{ matrix.environment }}/state"
 
+      - name: Terraform tfvars 복원
+        id: tfvars
+        if: steps.init.outcome == 'success'
+        working-directory: terraform/environments/${{ matrix.environment }}
+        run: |
+          case "${{ matrix.environment }}" in
+            prod)
+              TFVARS_CONTENT="${TERRAFORM_TFVARS_PROD}"
+              SECRET_NAME="TERRAFORM_TFVARS_PROD"
+              ;;
+            *)
+              echo "오류: 지원하지 않는 환경입니다: ${{ matrix.environment }}"
+              exit 1
+              ;;
+          esac
+
+          if [ -z "${TFVARS_CONTENT}" ]; then
+            echo "오류: GitHub Secret ${SECRET_NAME}를 설정해야 합니다."
+            exit 1
+          fi
+
+          printf '%s\n' "${TFVARS_CONTENT}" > terraform.tfvars
+          chmod 600 terraform.tfvars
+
       - name: Terraform 포맷 확인
         id: fmt
         if: steps.init.outcome == 'success'
@@ -117,13 +143,13 @@ jobs:
 
       - name: Terraform 유효성 검사
         id: validate
-        if: steps.init.outcome == 'success'
+        if: steps.init.outcome == 'success' && steps.tfvars.outcome == 'success'
         working-directory: terraform/environments/${{ matrix.environment }}
         run: terraform validate -no-color
 
       - name: Terraform Plan 실행
         id: plan
-        if: steps.init.outcome == 'success' && steps.validate.outcome == 'success'
+        if: steps.init.outcome == 'success' && steps.tfvars.outcome == 'success' && steps.validate.outcome == 'success'
         working-directory: terraform/environments/${{ matrix.environment }}
         run: |
           terraform plan -no-color -out=tfplan
@@ -135,6 +161,7 @@ jobs:
         env:
           STATE_BUCKET_OUTCOME: ${{ steps.state-bucket.outcome }}
           INIT_OUTCOME: ${{ steps.init.outcome }}
+          TFVARS_OUTCOME: ${{ steps.tfvars.outcome }}
           FMT_OUTCOME: ${{ steps.fmt.outcome }}
           VALIDATE_OUTCOME: ${{ steps.validate.outcome }}
           PLAN_OUTCOME: ${{ steps.plan.outcome }}
@@ -150,6 +177,7 @@ jobs:
             "environment": "${{ matrix.environment }}",
             "state_bucket": "${STATE_BUCKET_OUTCOME:-skipped}",
             "init": "${INIT_OUTCOME:-skipped}",
+            "tfvars": "${TFVARS_OUTCOME:-skipped}",
             "fmt": "${FMT_OUTCOME:-skipped}",
             "validate": "${VALIDATE_OUTCOME:-skipped}",
             "plan": "${PLAN_OUTCOME:-skipped}"
@@ -199,6 +227,7 @@ jobs:
             core.setOutput('environment', status.environment);
             core.setOutput('state_bucket', status.state_bucket);
             core.setOutput('init', status.init);
+            core.setOutput('tfvars', status.tfvars);
             core.setOutput('fmt', status.fmt);
             core.setOutput('validate', status.validate);
             core.setOutput('plan', status.plan);
@@ -220,6 +249,7 @@ jobs:
         env:
           STATE_BUCKET_STATUS: ${{ steps.plan-status.outputs.state_bucket }}
           INIT_STATUS: ${{ steps.plan-status.outputs.init }}
+          TFVARS_STATUS: ${{ steps.plan-status.outputs.tfvars }}
           FMT_STATUS: ${{ steps.plan-status.outputs.fmt }}
           VALIDATE_STATUS: ${{ steps.plan-status.outputs.validate }}
           PLAN_STATUS: ${{ steps.plan-status.outputs.plan }}
@@ -236,6 +266,7 @@ jobs:
 
           STATE_BUCKET_EMOJI=$(status_emoji "$STATE_BUCKET_STATUS")
           INIT_EMOJI=$(status_emoji "$INIT_STATUS")
+          TFVARS_EMOJI=$(status_emoji "$TFVARS_STATUS")
           FMT_EMOJI=$(status_emoji "$FMT_STATUS")
           VALIDATE_EMOJI=$(status_emoji "$VALIDATE_STATUS")
           PLAN_EMOJI=$(status_emoji "$PLAN_STATUS")
@@ -245,6 +276,7 @@ jobs:
 
           #### State 버킷 변수 확인 📦 ${STATE_BUCKET_EMOJI}
           #### 초기화 결과 ⚙️ ${INIT_EMOJI}
+          #### tfvars 복원 결과 🔐 ${TFVARS_EMOJI}
           #### 포맷 검사 결과 🖌 ${FMT_EMOJI}
           #### 유효성 검사 결과 🤖 ${VALIDATE_EMOJI}
           #### Plan 결과 📖 ${PLAN_EMOJI}

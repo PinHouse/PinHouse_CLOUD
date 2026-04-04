@@ -25,7 +25,9 @@ permissions:
 env:
   GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
   GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-  TERRAFORM_STATE_BUCKET: ${{ vars.TERRAFORM_STATE_BUCKET }}
+  TERRAFORM_STATE_BUCKET: ${{ secrets.TERRAFORM_STATE_BUCKET }}
+  TERRAFORM_TFVARS_DEV: ${{ secrets.TERRAFORM_TFVARS_DEV }}
+  TERRAFORM_TFVARS_PROD: ${{ secrets.TERRAFORM_TFVARS_PROD }}
 
 jobs:
   terraform-apply:
@@ -61,7 +63,7 @@ jobs:
       - name: State 버킷 변수 확인
         run: |
           if [ -z "${{ env.TERRAFORM_STATE_BUCKET }}" ]; then
-            echo "오류: GitHub Variables에 TERRAFORM_STATE_BUCKET을 설정해야 합니다."
+            echo "오류: GitHub Secrets에 TERRAFORM_STATE_BUCKET을 설정해야 합니다."
             exit 1
           fi
 
@@ -72,6 +74,29 @@ jobs:
           terraform init \
             -backend-config="bucket=${{ env.TERRAFORM_STATE_BUCKET }}" \
             -backend-config="prefix=terraform/${{ github.event.inputs.environment }}/state"
+
+      - name: Terraform tfvars 복원
+        id: tfvars
+        working-directory: terraform/environments/${{ github.event.inputs.environment }}
+        run: |
+          case "${{ github.event.inputs.environment }}" in
+            prod)
+              TFVARS_CONTENT="${TERRAFORM_TFVARS_PROD}"
+              SECRET_NAME="TERRAFORM_TFVARS_PROD"
+              ;;
+            *)
+              echo "오류: 지원하지 않는 환경입니다: ${{ github.event.inputs.environment }}"
+              exit 1
+              ;;
+          esac
+
+          if [ -z "${TFVARS_CONTENT}" ]; then
+            echo "오류: GitHub Secret ${SECRET_NAME}를 설정해야 합니다."
+            exit 1
+          fi
+
+          printf '%s\n' "${TFVARS_CONTENT}" > terraform.tfvars
+          chmod 600 terraform.tfvars
 
       - name: Terraform Plan 실행
         id: plan
