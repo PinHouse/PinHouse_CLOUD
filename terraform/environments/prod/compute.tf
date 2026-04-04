@@ -24,7 +24,12 @@ module "k8s_master_nodes" {
   boot_disk_size_gb  = var.k8s_node_boot_disk_size_gb
   boot_disk_type     = "pd-balanced"
   enable_external_ip = false
-  tags               = ["k8s-master", var.environment]
+  startup_script = templatefile("${path.module}/scripts/k8s-master-init.sh", {
+    k8s_pod_cidr     = var.k8s_pod_cidr
+    k8s_service_cidr = var.k8s_service_cidr
+    calico_version   = var.calico_version
+  })
+  tags = ["k8s-master", var.environment]
 
   # 태그
   common_tags = merge(var.common_tags, {
@@ -45,7 +50,8 @@ module "k8s_master_nodes" {
 module "k8s_worker_nodes" {
   source = "../../modules/compute"
 
-  name_prefix = "${var.project}-${var.environment}-k8s-worker"
+  # 서브넷 이동은 MIG 인플레이스 업데이트가 불가하므로 새 이름으로 교체합니다.
+  name_prefix = "${var.project}-${var.environment}-k8s-workers"
   network     = module.vpc.vpc_self_link
   subnetwork  = module.vpc.subnets["app"].self_link
 
@@ -68,6 +74,7 @@ module "k8s_worker_nodes" {
   boot_disk_size_gb  = var.k8s_node_boot_disk_size_gb
   boot_disk_type     = "pd-balanced"
   enable_external_ip = false
+  startup_script     = file("${path.module}/scripts/k8s-worker-init.sh")
   tags               = ["k8s-worker", var.environment]
 
   # 태그
