@@ -91,6 +91,12 @@ variable "web_machine_type" {
   default     = "e2-standard-2" # 운영 환경에 맞춘 고성능 인스턴스입니다.
 }
 
+variable "web_machine_ssd" {
+  description = "웹 서버 부팅 디스크 크기(GB)입니다."
+  type        = number
+  default     = 50
+}
+
 variable "web_source_image" {
   description = "웹 서버 부팅 디스크에 사용할 이미지입니다."
   type        = string
@@ -143,4 +149,18 @@ variable "ssl_certificates" {
   description = "HTTPS 로드 밸런서에 연결할 SSL 인증서 self_link 목록입니다."
   type        = list(string)
   default     = []
+}
+
+# ========================================
+# 공통 태그 변수
+# ========================================
+variable "common_tags" {
+  description = "공통 태그입니다."
+  type        = map(string)
+  default = {
+    Project     = "pinhouse"
+    Environment = "prod"
+    Version     = "v1"
+    ManagedBy   = "Terraform"
+  }
 }
