@@ -15,18 +15,16 @@ permissions:
   pull-requests: write
   id-token: write
 
-# 환경변수 설정
-env:
-  GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-  GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-  TERRAFORM_STATE_BUCKET: ${{ secrets.TERRAFORM_STATE_BUCKET }}
-  TERRAFORM_TFVARS_PROD: ${{ secrets.TERRAFORM_TFVARS_PROD }}
-
 jobs:
   # 변경된 Terraform 파일을 기준으로 영향받는 환경을 계산
   detect-changes:
     name: 변경 환경 감지
     runs-on: ubuntu-22.04
+    env:
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ""
+      GCP_SERVICE_ACCOUNT: ""
+      TERRAFORM_STATE_BUCKET: ""
+      TERRAFORM_TFVARS_PROD: ""
     outputs:
       environments: ${{ steps.detect.outputs.environments || '[]' }}
     steps:
@@ -71,6 +69,11 @@ jobs:
     runs-on: ubuntu-22.04
     needs: detect-changes
     if: always()
+    env:
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ""
+      GCP_SERVICE_ACCOUNT: ""
+      TERRAFORM_STATE_BUCKET: ""
+      TERRAFORM_TFVARS_PROD: ""
 
     steps:
       - name: detect-changes 출력 확인
@@ -96,6 +99,11 @@ jobs:
     runs-on: ubuntu-22.04
     needs: detect-changes
     if: (needs.detect-changes.outputs.environments || '[]') != '[]' # 변경된 환경이 있을 때만 실행합니다.
+    env:
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      TERRAFORM_STATE_BUCKET: ${{ secrets.TERRAFORM_STATE_BUCKET }}
+      TERRAFORM_TFVARS_PROD: ${{ secrets.TERRAFORM_TFVARS_PROD }}
     strategy:
       fail-fast: false # 한 환경 실패가 다른 환경 확인을 막지 않도록 유지합니다.
       matrix:
