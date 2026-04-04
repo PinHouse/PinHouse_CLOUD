@@ -1,8 +1,8 @@
 # ========================================
-# 헬스 체크 리소스
+# 글로벌 헬스 체크 리소스
 # ========================================
 resource "google_compute_health_check" "health_check" {
-  count = var.create_health_check ? 1 : 0
+  count = var.create_health_check && var.lb_type != "NETWORK" ? 1 : 0
 
   name                = "${var.name_prefix}-health-check"
   check_interval_sec  = var.health_check_interval
@@ -46,6 +46,58 @@ resource "google_compute_health_check" "health_check" {
 }
 
 # ========================================
+# 리전 헬스 체크 리소스
+# ========================================
+resource "google_compute_region_health_check" "regional_health_check" {
+  count = var.create_health_check && var.lb_type == "NETWORK" ? 1 : 0
+
+  name                = "${var.name_prefix}-health-check"
+  region              = var.region
+  check_interval_sec  = var.health_check_interval
+  timeout_sec         = var.health_check_timeout
+  healthy_threshold   = var.health_check_healthy_threshold
+  unhealthy_threshold = var.health_check_unhealthy_threshold
+
+  # HTTP 헬스 체크 설정입니다.
+  dynamic "http_health_check" {
+    for_each = var.health_check_protocol == "HTTP" ? [1] : []
+    content {
+      port         = var.health_check_port
+      request_path = var.health_check_request_path
+    }
+  }
+
+  # HTTPS 헬스 체크 설정입니다.
+  dynamic "https_health_check" {
+    for_each = var.health_check_protocol == "HTTPS" ? [1] : []
+    content {
+      port         = var.health_check_port
+      request_path = var.health_check_request_path
+    }
+  }
+
+  # TCP 헬스 체크 설정입니다.
+  dynamic "tcp_health_check" {
+    for_each = var.health_check_protocol == "TCP" ? [1] : []
+    content {
+      port = var.health_check_port
+    }
+  }
+
+  # SSL 헬스 체크 설정입니다.
+  dynamic "ssl_health_check" {
+    for_each = var.health_check_protocol == "SSL" ? [1] : []
+    content {
+      port = var.health_check_port
+    }
+  }
+}
+
+locals {
+  created_health_check_ids = var.lb_type == "NETWORK" ? google_compute_region_health_check.regional_health_check[*].id : google_compute_health_check.health_check[*].id
+}
+
+# ========================================
 # 네트워크 로드 밸런서 백엔드 서비스
 # ========================================
 resource "google_compute_region_backend_service" "backend_service" {
@@ -68,7 +120,7 @@ resource "google_compute_region_backend_service" "backend_service" {
   }
 
   # 생성한 헬스 체크가 있으면 우선 사용합니다.
-  health_checks = var.create_health_check ? [google_compute_health_check.health_check[0].id] : var.health_check_ids
+  health_checks = var.create_health_check ? local.created_health_check_ids : var.health_check_ids
 
   # 세션 어피니티 설정입니다.
   session_affinity = var.session_affinity
@@ -119,7 +171,7 @@ resource "google_compute_backend_service" "global_backend_service" {
   }
 
   # 생성한 헬스 체크가 있으면 우선 사용합니다.
-  health_checks = var.create_health_check ? [google_compute_health_check.health_check[0].id] : var.health_check_ids
+  health_checks = var.create_health_check ? local.created_health_check_ids : var.health_check_ids
 
   # 세션 어피니티 설정입니다.
   session_affinity = var.session_affinity
