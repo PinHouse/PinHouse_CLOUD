@@ -24,6 +24,7 @@ module "k8s_master_nodes" {
   boot_disk_size_gb  = var.k8s_node_boot_disk_size_gb
   boot_disk_type     = "pd-balanced"
   enable_external_ip = false
+  startup_script     = file("${path.module}/scripts/k8s-master-init.sh")
   tags               = ["k8s-master", var.environment]
 
   # 태그
@@ -69,6 +70,7 @@ module "k8s_worker_nodes" {
   boot_disk_size_gb  = var.k8s_node_boot_disk_size_gb
   boot_disk_type     = "pd-balanced"
   enable_external_ip = false
+  startup_script     = file("${path.module}/scripts/k8s-worker-init.sh")
   tags               = ["k8s-worker", var.environment]
 
   # 태그
