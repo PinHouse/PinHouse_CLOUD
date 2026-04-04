@@ -45,25 +45,22 @@ jobs:
           echo "변경된 파일 목록:"
           echo "$CHANGED_FILES"
 
-          # 변경된 환경을 JSON 배열 문자열로 수집합니다.
-          ENVIRONMENTS=""
-
-          # prod 환경 파일 변경 여부를 확인합니다.
+          # prod 환경 또는 공통 모듈 변경 시 prod 환경 Plan을 수행합니다.
+          ENVIRONMENTS='[]'
           if echo "$CHANGED_FILES" | grep -q "terraform/environments/prod/"; then
-            ENVIRONMENTS="$ENVIRONMENTS\"prod\","
+            ENVIRONMENTS='["prod"]'
           fi
 
-          # 공통 모듈이 바뀌면 모든 환경에서 Plan을 수행합니다.
           if echo "$CHANGED_FILES" | grep -q "terraform/modules/"; then
-            ENVIRONMENTS="\"prod\""
+            ENVIRONMENTS='["prod"]'
           fi
-
-          # 마지막 쉼표를 제거하고 JSON 배열 형식으로 변환합니다.
-          ENVIRONMENTS=$(echo "$ENVIRONMENTS" | sed 's/,$//')
-          ENVIRONMENTS="[$ENVIRONMENTS]"
 
           echo "감지된 환경: $ENVIRONMENTS"
-          echo "environments=$ENVIRONMENTS" >> $GITHUB_OUTPUT
+          {
+            echo "environments<<EOF"
+            echo "$ENVIRONMENTS"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
   # 환경별 Terraform init/fmt/validate/plan을 수행하고 결과 파일을 아티팩트로 남깁니다.
   terraform-plan-checks:
