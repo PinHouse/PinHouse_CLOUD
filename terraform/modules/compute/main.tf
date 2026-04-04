@@ -52,8 +52,10 @@ resource "google_compute_instance_template" "template" {
   # 네트워크 태그입니다.
   tags = var.tags
 
-  # 공통 레이블입니다.
-  labels = var.labels
+  # 공통 태그를 GCP 레이블에 반영합니다.
+  labels = {
+    for k, v in var.common_tags : lower(k) => lower(v)
+  }
 
   # 선점형 인스턴스일 때 스케줄링 정책을 조정합니다.
   scheduling {
@@ -107,11 +109,11 @@ resource "google_compute_instance" "instances" {
       enable-oslogin = var.enable_os_login
     },
     var.metadata,
-    lookup(each.value, "metadata", {})
+    coalesce(lookup(each.value, "metadata", null), {})
   )
 
   # 인스턴스별 시작 스크립트를 우선 적용합니다.
-  metadata_startup_script = lookup(each.value, "startup_script", var.startup_script)
+  metadata_startup_script = coalesce(lookup(each.value, "startup_script", null), var.startup_script)
 
   # 서비스 계정 설정입니다.
   service_account {
@@ -120,10 +122,17 @@ resource "google_compute_instance" "instances" {
   }
 
   # 공통 태그와 인스턴스별 태그를 합칩니다.
-  tags = concat(var.tags, lookup(each.value, "tags", []))
+  tags = concat(var.tags, coalesce(lookup(each.value, "tags", null), []))
 
-  # 공통 레이블과 인스턴스별 레이블을 합칩니다.
-  labels = merge(var.labels, lookup(each.value, "labels", {}))
+  # 공통 태그와 인스턴스별 태그 맵을 GCP 레이블에 반영합니다.
+  labels = merge(
+    {
+      for k, v in var.common_tags : lower(k) => lower(v)
+    },
+    {
+      for k, v in coalesce(lookup(each.value, "common_tags", null), {}) : lower(k) => lower(v)
+    }
+  )
 
   # 선점형 여부에 따라 스케줄링 정책을 조정합니다.
   scheduling {

@@ -24,28 +24,12 @@ module "web_servers" {
   # 관리형 인스턴스 그룹을 사용하지 않을 때만 개별 인스턴스를 정의합니다.
   instances = !var.use_instance_group && var.create_web_instances ? tomap({
     web1 = {
-      name               = "${var.environment}-web-01"
-      zone               = "${var.region}-a"
-      machine_type       = var.web_machine_type
-      enable_external_ip = false # 프로덕션 환경은 로드 밸런서를 통한 접근만 허용합니다.
-      tags               = ["web-server", var.environment]
-      labels = {
-        environment = var.environment
-        role        = "web"
-      }
+      name                = "${var.environment}-web-01"
+      zone                = "${var.region}-a"
+      machine_type        = var.web_machine_type
+      enable_external_ip  = false # 프로덕션 환경은 로드 밸런서를 통한 접근만 허용합니다.
+      tags                = ["web-server", var.environment]
       deletion_protection = true # 실수로 삭제되지 않도록 보호합니다.
-    }
-    web2 = {
-      name               = "${var.environment}-web-02"
-      zone               = "${var.region}-b"
-      machine_type       = var.web_machine_type
-      enable_external_ip = false
-      tags               = ["web-server", var.environment]
-      labels = {
-        environment = var.environment
-        role        = "web"
-      }
-      deletion_protection = true
     }
   }) : tomap({})
 
@@ -56,10 +40,11 @@ module "web_servers" {
   boot_disk_type     = "pd-ssd"
   enable_external_ip = false
   tags               = ["web-server", var.environment]
-  labels = {
-    environment = var.environment
-    role        = "web"
-  }
+
+  # 태그
+  common_tags = merge(var.common_tags, {
+    Service = "Backend"
+  })
 
   # 서비스 계정 설정
   service_account_email = var.service_account_email

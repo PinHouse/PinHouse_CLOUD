@@ -23,8 +23,8 @@ variable "default_storage_class" {
   }
 }
 
-variable "default_labels" {
-  description = "모든 버킷에 공통 적용할 레이블입니다."
+variable "common_tags" {
+  description = "모든 버킷에 공통 적용할 태그입니다."
   type        = map(string)
   default     = {}
 }
@@ -38,7 +38,7 @@ variable "buckets" {
     name                        = string
     location                    = optional(string)
     storage_class               = optional(string)
-    labels                      = optional(map(string))
+    common_tags                 = optional(map(string))
     uniform_bucket_level_access = optional(bool)
     versioning_enabled          = optional(bool)
     force_destroy               = optional(bool)

@@ -105,8 +105,8 @@ variable "tags" {
   default     = []
 }
 
-variable "labels" {
-  description = "NAT 인스턴스에 부여할 레이블입니다."
+variable "common_tags" {
+  description = "NAT 인스턴스에 부여할 공통 태그입니다."
   type        = map(string)
   default     = {}
 }

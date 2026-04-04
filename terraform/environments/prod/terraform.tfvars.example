@@ -30,7 +30,7 @@ autoscaling_max_replicas = 5
 
 web_machine_type = "e2-standard-2"
 web_source_image = "ubuntu-os-cloud/ubuntu-2204-lts"
-
+web_machine_ssd  = 30
 # ========================================
 # 스토리지 관련 값
 # ========================================

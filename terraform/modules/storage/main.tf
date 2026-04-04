@@ -11,10 +11,14 @@ resource "google_storage_bucket" "buckets" {
   # 버킷이 생성될 프로젝트입니다.
   project = var.project_id
 
-  # 기본 레이블과 버킷별 레이블을 병합합니다.
+  # 기본 태그와 버킷별 태그를 GCP 레이블에 반영합니다.
   labels = merge(
-    var.default_labels,
-    lookup(each.value, "labels", {})
+    {
+      for k, v in var.common_tags : lower(k) => lower(v)
+    },
+    {
+      for k, v in coalesce(lookup(each.value, "common_tags", null), {}) : lower(k) => lower(v)
+    }
   )
 
   # 균일한 버킷 수준 액세스 설정입니다.

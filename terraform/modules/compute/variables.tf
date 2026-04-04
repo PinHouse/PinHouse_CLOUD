@@ -109,8 +109,8 @@ variable "tags" {
   default     = []
 }
 
-variable "labels" {
-  description = "인스턴스에 적용할 공통 레이블입니다."
+variable "common_tags" {
+  description = "인스턴스에 적용할 공통 태그입니다."
   type        = map(string)
   default     = {}
 }
@@ -135,7 +135,7 @@ variable "instances" {
     metadata            = optional(map(string))
     startup_script      = optional(string)
     tags                = optional(list(string))
-    labels              = optional(map(string))
+    common_tags         = optional(map(string))
     deletion_protection = optional(bool)
   }))
   default = {}
