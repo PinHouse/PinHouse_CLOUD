@@ -6,7 +6,7 @@ module "vpc" {
 
   vpc_name     = "${var.project}-${var.environment}-vpc"
   description  = "프로덕션 환경용 VPC 네트워크"
-  routing_mode = "GLOBAL"
+  routing_mode = "REGIONAL"
 
   # 서브넷 정의
   subnets = {
