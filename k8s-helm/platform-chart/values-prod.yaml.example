@@ -1,0 +1,178 @@
+# Prod values
+
+# SSL 매니저
+certManager:
+  enabled: true
+
+  # 🔒 실제 이메일 주소로 변경
+  acmeEmail: "your-email@example.com"
+
+  # 테스트 시 true, 검증 완료 후 false
+  letsencrypt:
+    staging:
+      enabled: false
+    production:
+      enabled: true
+
+  # DNS-01 Challenge (CloudDNS)
+  cloudDNS:
+    projectId: "projectId"
+
+# 게이트웨이
+gateway:
+  enabled: true
+  name: pinhouse-gateway
+  namespace: nginx-gateway
+  gatewayClassName: nginx
+
+  http:
+    enabled: true
+    port: 80
+
+  # HTTP to HTTPS 리다이렉트 (301 Permanent Redirect)
+  http_redirect:
+    enabled: true  # 모든 HTTP 요청을 HTTPS로 리다이렉트
+
+  # 환경별 리스너 (for문으로 순회)
+  environments:
+    - name: dev
+      enabled: false  # Prod 환경에서는 비활성화
+      tlsSecretName: your-tls-dev
+      services:
+        - name: web
+          hostname: dev.your-domain.com
+        - name: api
+          hostname: dev.api.your-domain.com
+
+    - name: stg
+      enabled: false  # Prod 환경에서는 비활성화
+      tlsSecretName: your-tls-stg
+      services:
+        - name: web
+          hostname: stg.your-domain.com
+        - name: api
+          hostname: stg.api.your-domain.com
+
+    - name: prod
+      enabled: true  # Prod 환경 활성화
+      tlsSecretName: your-tls-prod
+      services:
+        - name: web
+          hostname: your-domain.com           # 🔒 실제 도메인으로 변경
+        - name: www
+          hostname: www.your-domain.com
+        - name: api
+          hostname: api.your-domain.com       # 🔒 실제 도메인으로 변경
+
+  # 특수 리스너 (ArgoCD 등)
+  listeners:
+    argo:
+      enabled: true
+      domain: prod.argo.your-domain.com  # 🔒 실제 도메인으로 변경
+      tlsSecretName: your-tls-argo-prod
+
+# 접근 제어 (Access Control)
+accessControl:
+  enabled: true
+  blockedPaths:
+    - name: swagger-api-docs
+      hostnames:
+        - api.your-domain.com  # 🔒 실제 도메인으로 변경
+      paths:
+        - /swagger-ui
+        - /v3/api-docs
+
+# 네트워크 정책
+networkPolicy:
+  enabled: true
+
+  # 🔒 실제 CIDR/IP 로 변경
+  database:
+    rds:
+      cidr: "172.16.0.0/16"
+    ec2:
+      ip: "10.0.0.0/16"
+
+  ports:
+    frontend: 3000
+    backend: 8080
+    postgres: 5432
+    redis: 6379
+    rabbitmq: 5672
+    dns: 53
+    http: 80
+    https: 443
+
+  namespaces:
+    - name: nginx-gateway
+      enabled: true
+    - name: app
+      enabled: true
+
+# 인증서
+certificates:
+  enabled: true
+  issuer: letsencrypt-staging
+
+  certs:
+    - name: your-tls-prod
+      namespace: nginx-gateway
+      dnsNames:
+        - domain.com
+        - www.domain.com
+        - api.domain.com
+      enabled: true
+
+    # 🔒 실제 도메인으로 변경
+    - name: your-tls-argo
+      namespace: nginx-gateway
+      dnsNames:
+        - argo.your-domain.com
+      enabled: true
+
+# GCP Secret Manager 기반 시크릿 적용
+externalSecrets:
+  enabled: true
+
+  # 시크릿 스토어
+  secretStores:
+    - kind: ClusterSecretStore
+      name: gcp-secret-manager
+      spec:
+        provider:
+          gcpsm:
+            projectID: your-gcp-project-id
+
+  # 시크릿
+  secrets:
+
+    # 백엔드 시크릿 적용
+    - name: backend-secret-kv
+      namespace: app
+      spec:
+        refreshInterval: 1h
+        secretStoreRef:
+          name: gcp-secret-manager
+          kind: ClusterSecretStore
+        target:
+          name: backend-secret-kv
+          creationPolicy: Owner
+          deletionPolicy: Retain
+        dataFrom:
+          - find:
+              name:
+                regexp: "^Prod_BE_"  # 🔒 예: Prod_BE_DB_URL, Prod_BE_DB_PASSWORD
+              conversionStrategy: Default
+              decodingStrategy: None
+            rewrite:
+              - regexp:
+                  source: "^Prod_BE_(.*)$"
+                  target: "$1"
+
+
+# ArgoCD 적용
+argocd:
+  imageUpdater:
+    restartCronJob:
+      enabled: true
+      schedule: "0 */6 * * *"
