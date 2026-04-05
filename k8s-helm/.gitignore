@@ -1,4 +1,12 @@
 # ========================================
+# 내부 서비스 전용 helm 차트
+# ========================================
+platform-chart/**/*.yaml
+platform-chart/**/README.md
+!platform-chart/**/*.yaml.example
+!platform-chart/**/values.yaml
+
+# ========================================
 # 로컬 시크릿 매니페스트
 # ========================================
 releases/**/secrets/*.yaml
