@@ -148,7 +148,7 @@ variable "google_api_domain_option" {
 variable "secret_manager_secret_ids" {
   description = "생성할 Secret Manager secret ID 목록입니다. 값 자체는 생성하지 않고 secret container만 생성합니다."
   type        = set(string)
-  default = []
+  default     = []
 }
 
 variable "secret_manager_secret_iam_bindings" {
