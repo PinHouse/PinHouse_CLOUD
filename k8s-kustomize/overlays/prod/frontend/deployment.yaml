@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+
+# 기본 설정
+metadata:
+  name: pinhouse-fe
+
+# 스펙
+spec:
+  # Replica 개수
+  replicas: 1
+
+  # 라벨
+  template:
+    metadata:
+      labels:
+        environment: prod
+
+    # 컨테이너 스펙
+    spec:
+      containers:
+        - name: pinhouse-fe
+
+          # 자원 제한은 미정

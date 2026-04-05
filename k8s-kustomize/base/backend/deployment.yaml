@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+
+# 기본 정보
+metadata:
+  name: pinhouse-be
+
+# 스펙
+spec:
+  replicas: 2
+  # RS 최근 3개 버전만 보관
+  revisionHistoryLimit: 1
+
+  # 배포 전략: Zero-downtime Rolling Update
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0  # 삭제 되는 Pod 수
+      maxSurge: 1        # 업데이트를 위해서 1개의 Pod 추가
+
+  # 셀렉터
+  selector:
+    matchLabels:
+      app: backend
+
+  # 라벨
+  template:
+    metadata:
+      labels:
+        app: backend
+
+    # 컨테이너 스펙
+    spec:
+      containers:
+        - name: pinhouse-be
+
+          # 수정될 이미지
+          image: REPLACE_ME
+          ports:
+            - containerPort: 8080
+
+          # 파라미터 스토어에서 주입받는 내용
+          envFrom:
+            - secretRef:
+                name: backend-secret-kv
