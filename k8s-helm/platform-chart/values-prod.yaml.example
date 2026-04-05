@@ -168,11 +168,3 @@ externalSecrets:
               - regexp:
                   source: "^Prod_BE_(.*)$"
                   target: "$1"
-
-
-# ArgoCD 적용
-argocd:
-  imageUpdater:
-    restartCronJob:
-      enabled: true
-      schedule: "0 */6 * * *"
