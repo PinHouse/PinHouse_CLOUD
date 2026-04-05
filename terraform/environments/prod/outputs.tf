@@ -71,6 +71,19 @@ output "artifact_registry_docker_repository_urls" {
 }
 
 # ========================================
+# Secret Manager 출력값
+# ========================================
+output "secret_manager_secrets" {
+  description = "생성된 Secret Manager secret 정보입니다."
+  value       = module.secret_manager.secrets
+}
+
+output "secret_manager_secret_ids" {
+  description = "생성된 Secret Manager secret ID 목록입니다."
+  value       = module.secret_manager.secret_ids
+}
+
+# ========================================
 # 로드 밸런서 출력값
 # ========================================
 output "load_balancer_ip" {
