@@ -1,0 +1,11 @@
+fullnameOverride: ngf-nginx-gateway-fabric
+
+# Service 설정
+nginx:
+  service:
+    type: NodePort
+    nodePorts:
+      - port: 30080
+        listenerPort: 80
+      - port: 30443
+        listenerPort: 443
