@@ -13,6 +13,12 @@ releases/**/secrets/*.yaml
 !releases/**/secrets/*.yaml.example
 
 # ========================================
+# ArgoCD
+# ========================================
+releases/argocd/values-*.yaml
+!releases/argocd/*.yaml.example
+
+# ========================================
 # 로컬 오버라이드 파일
 # ========================================
 *.local.yaml

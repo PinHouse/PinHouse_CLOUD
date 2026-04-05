@@ -80,3 +80,19 @@ allowed_cors_origins = [
 # 로드 밸런서 관련 값
 # ========================================
 create_load_balancer = true
+
+# ========================================
+# Secret Manager 관련 값
+# ========================================
+secret_manager_secret_ids = [
+   "Prod_BE_DB_URL"
+ ]
+
+ESO 또는 특정 서비스 계정에 접근 권한을 줄 때만 아래 값을 채웁니다.
+secret_manager_secret_iam_members = {
+   eso = {
+     secret_id = "Prod_BE_DB_URL"
+     role      = "roles/secretmanager.secretAccessor"
+     member    = "serviceAccount:example-secrets@example-pinhouse.iam.gserviceaccount.com"
+   }
+}

@@ -1,0 +1,72 @@
+# ArgoCD Image Updater 생성
+
+# 기본 설정
+fullnameOverride: argocd-image-updater
+
+config:
+  # ArgoCD 연결 설정
+  argocd:
+    # ArgoCD가 같은 클러스터에 있으므로 내부 서비스 사용
+    grpcWeb: false
+    serverAddress: "http://argocd-server.argocd.svc.cluster.local"
+    insecure: true
+    plaintext: true
+
+  # Git write-back 설정
+  git:
+    user: argocd-image-updater
+    email: argocd-image-updater@noreply.github.com
+
+  # GCP Artifact Registry 설정
+  registries:
+    - name: GCP Artifact Registry
+      prefix: asia-northeast3-docker.pkg.dev
+      api_url: https://asia-northeast3-docker.pkg.dev
+      credentials: ext:/scripts/gcp-artifact-registry-login.sh
+      credsexpire: 45m
+      default: true
+
+  # 로그 레벨
+  logLevel: info
+
+# GCP Artifact Registry 인증 스크립트
+# self-managed GCE Kubernetes 환경을 전제로, 노드에 연결된 서비스 계정의
+# metadata server access token을 사용합니다.
+# 해당 서비스 계정에는 roles/artifactregistry.reader 권한이 필요합니다.
+authScripts:
+  enabled: true
+  scripts:
+    gcp-artifact-registry-login.sh: |
+      #!/bin/sh
+      set -eu
+
+      METADATA_URL="http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token"
+      TOKEN_RESPONSE="$(wget -qO- --header='Metadata-Flavor: Google' "${METADATA_URL}" | tr -d '\n')"
+      ACCESS_TOKEN="$(printf '%s' "${TOKEN_RESPONSE}" | sed -n 's/.*"access_token"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
+
+      if [ -z "${ACCESS_TOKEN}" ]; then
+        echo "failed to fetch Artifact Registry access token from metadata server" >&2
+        exit 1
+      fi
+
+      printf 'oauth2accesstoken:%s\n' "${ACCESS_TOKEN}"
+
+# 리소스 제한
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+# 업데이트 주기
+image:
+  pullPolicy: IfNotPresent
+
+# ServiceAccount 설정
+serviceAccount:
+  create: true
+  name: argocd-image-updater
+
+# Git 환경 변수는 UI에서 주입

@@ -112,12 +112,3 @@ externalSecrets:
 
   # ExternalSecret 리소스 목록
   secrets: []
-
-# ArgoCD 설정
-argocd:
-  # ArgoCD Image Updater ECR 토큰 자동 갱신
-  imageUpdater:
-    restartCronJob:
-      enabled: false
-      # 0 */6 * * * = 매 6시간마다 (0시, 6시, 12시, 18시)
-      schedule: "0 */6 * * *"

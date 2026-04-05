@@ -1,0 +1,736 @@
+# ===================================
+# ArgoCD Discord 알림 템플릿 및 트리거 설정
+# ===================================
+#
+# 이 파일은 Argo CD 운영 부가 리소스의 base ConfigMap입니다.
+# 환경별 Argo CD URL은 overlays/prod 또는 overlays/nonprod 패치에서 덮어씁니다.
+# ===================================
+
+apiVersion: v1
+kind: ConfigMap
+
+# 기본 정보
+metadata:
+  name: argocd-notifications-cm
+  namespace: argocd
+
+# 데이터
+data:
+  context.argocdUrl: "https://argo.example.com"
+
+  # ===================================
+  # Discord Webhook 서비스 설정
+  # ===================================
+  # Discord는 webhook 타입으로 설정해야 합니다
+
+  # Frontend Nonprod (Dev + Staging)
+  service.webhook.frontend-nonprod: |
+    url: $discord-frontend-nonprod-webhook
+    headers:
+    - name: Content-Type
+      value: application/json
+
+  # Backend Nonprod (Dev + Staging)
+  service.webhook.backend-nonprod: |
+    url: $discord-backend-nonprod-webhook
+    headers:
+    - name: Content-Type
+      value: application/json
+
+  # Frontend Production
+  service.webhook.frontend-prod: |
+    url: $discord-frontend-prod-webhook
+    headers:
+    - name: Content-Type
+      value: application/json
+
+  # Backend Production
+  service.webhook.backend-prod: |
+    url: $discord-backend-prod-webhook
+    headers:
+    - name: Content-Type
+      value: application/json
+
+  # ===================================
+  # 템플릿: 배포 완료 (Deployed)
+  # ===================================
+  template.app-deployed: |
+    webhook:
+      frontend-nonprod:
+        method: POST
+        body: |
+          {
+            "embeds": [{
+              "title": "✅ 배포 완료",
+              "description": "ArgoCD 배포가 성공적으로 완료되었습니다.",
+              "color": 3066993,
+              "fields": [
+                {
+                  "name": "🌍 Environment",
+                  "value": "{{ index .app.metadata.labels "pinhouse.co.kr/environment" | upper }}",
+                  "inline": true
+                },
+                {
+                  "name": "📦 Application",
+                  "value": "{{.app.metadata.name}}",
+                  "inline": true
+                },
+                {
+                  "name": "📍 Namespace",
+                  "value": "{{.app.spec.destination.namespace}}",
+                  "inline": true
+                },
+                {
+                  "name": "🔖 Revision",
+                  "value": "{{.app.status.sync.revision | substr 0 7}}",
+                  "inline": true
+                },
+                {
+                  "name": "🔗 ArgoCD",
+                  "value": "[바로가기]({{.context.argocdUrl}}/applications/{{.app.metadata.name}})",
+                  "inline": false
+                }
+              ],
+              "timestamp": "{{.app.status.operationState.finishedAt}}"
+            }]
+          }
+      backend-nonprod:
+        method: POST
+        body: |
+          {
+            "embeds": [{
+              "title": "✅ 배포 완료",
+              "description": "ArgoCD 배포가 성공적으로 완료되었습니다.",
+              "color": 3066993,
+              "fields": [
+                {
+                  "name": "🌍 Environment",
+                  "value": "{{ index .app.metadata.labels "pinhouse.co.kr/environment" | upper }}",
+                  "inline": true
+                },
+                {
+                  "name": "📦 Application",
+                  "value": "{{.app.metadata.name}}",
+                  "inline": true
+                },
+                {
+                  "name": "📍 Namespace",
+                  "value": "{{.app.spec.destination.namespace}}",
+                  "inline": true
+                },
+                {
+                  "name": "🔖 Revision",
+                  "value": "{{.app.status.sync.revision | substr 0 7}}",
+                  "inline": true
+                },
+                {
+                  "name": "🔗 ArgoCD",
+                  "value": "[바로가기]({{.context.argocdUrl}}/applications/{{.app.metadata.name}})",
+                  "inline": false
+                }
+              ],
+              "timestamp": "{{.app.status.operationState.finishedAt}}"
+            }]
+          }
+      ai-nonprod:
+        method: POST
+        body: |
+          {
+            "embeds": [{
+              "title": "✅ 배포 완료",
+              "description": "ArgoCD 배포가 성공적으로 완료되었습니다.",
+              "color": 3066993,
+              "fields": [
+                {
+                  "name": "🌍 Environment",
+                  "value": "{{ index .app.metadata.labels "pinhouse.co.kr/environment" | upper }}",
+                  "inline": true
+                },
+                {
+                  "name": "📦 Application",
+                  "value": "{{.app.metadata.name}}",
+                  "inline": true
+                },
+                {
+                  "name": "📍 Namespace",
+                  "value": "{{.app.spec.destination.namespace}}",
+                  "inline": true
+                },
+                {
+                  "name": "🔖 Revision",
+                  "value": "{{.app.status.sync.revision | substr 0 7}}",
+                  "inline": true
+                },
+                {
+                  "name": "🔗 ArgoCD",
+                  "value": "[바로가기]({{.context.argocdUrl}}/applications/{{.app.metadata.name}})",
+                  "inline": false
+                }
+              ],
+              "timestamp": "{{.app.status.operationState.finishedAt}}"
+            }]
+          }
+      frontend-prod:
+        method: POST
+        body: |
+          {
+            "embeds": [{
+              "title": "✅ 배포 완료",
+              "description": "ArgoCD 배포가 성공적으로 완료되었습니다.",
+              "color": 3066993,
+              "fields": [
+                {
+                  "name": "🌍 Environment",
+                  "value": "{{ index .app.metadata.labels "pinhouse.co.kr/environment" | upper }}",
+                  "inline": true
+                },
+                {
+                  "name": "📦 Application",
+                  "value": "{{.app.metadata.name}}",
+                  "inline": true
+                },
+                {
+                  "name": "📍 Namespace",
+                  "value": "{{.app.spec.destination.namespace}}",
+                  "inline": true
+                },
+                {
+                  "name": "🔖 Revision",
+                  "value": "{{.app.status.sync.revision | substr 0 7}}",
+                  "inline": true
+                },
+                {
+                  "name": "🔗 ArgoCD",
+                  "value": "[바로가기]({{.context.argocdUrl}}/applications/{{.app.metadata.name}})",
+                  "inline": false
+                }
+              ],
+              "timestamp": "{{.app.status.operationState.finishedAt}}"
+            }]
+          }
+      backend-prod:
+        method: POST
+        body: |
+          {
+            "embeds": [{
+              "title": "✅ 배포 완료",
+              "description": "ArgoCD 배포가 성공적으로 완료되었습니다.",
+              "color": 3066993,
+              "fields": [
+                {
+                  "name": "🌍 Environment",
+                  "value": "{{ index .app.metadata.labels "pinhouse.co.kr/environment" | upper }}",
+                  "inline": true
+                },
+                {
+                  "name": "📦 Application",
+                  "value": "{{.app.metadata.name}}",
+                  "inline": true
+                },
+                {
+                  "name": "📍 Namespace",
+                  "value": "{{.app.spec.destination.namespace}}",
+                  "inline": true
+                },
+                {
+                  "name": "🔖 Revision",
+                  "value": "{{.app.status.sync.revision | substr 0 7}}",
+                  "inline": true
+                },
+                {
+                  "name": "🔗 ArgoCD",
+                  "value": "[바로가기]({{.context.argocdUrl}}/applications/{{.app.metadata.name}})",
+                  "inline": false
+                }
+              ],
+              "timestamp": "{{.app.status.operationState.finishedAt}}"
+            }]
+          }
+      ai-prod:
+        method: POST
+        body: |
+          {
+            "embeds": [{
+              "title": "✅ 배포 완료",
+              "description": "ArgoCD 배포가 성공적으로 완료되었습니다.",
+              "color": 3066993,
+              "fields": [
+                {
+                  "name": "🌍 Environment",
+                  "value": "{{ index .app.metadata.labels "pinhouse.co.kr/environment" | upper }}",
+                  "inline": true
+                },
+                {
+                  "name": "📦 Application",
+                  "value": "{{.app.metadata.name}}",
+                  "inline": true
+                },
+                {
+                  "name": "📍 Namespace",
+                  "value": "{{.app.spec.destination.namespace}}",
+                  "inline": true
+                },
+                {
+                  "name": "🔖 Revision",
+                  "value": "{{.app.status.sync.revision | substr 0 7}}",
+                  "inline": true
+                },
+                {
+                  "name": "🔗 ArgoCD",
+                  "value": "[바로가기]({{.context.argocdUrl}}/applications/{{.app.metadata.name}})",
+                  "inline": false
+                }
+              ],
+              "timestamp": "{{.app.status.operationState.finishedAt}}"
+            }]
+          }
+
+  # ===================================
+  # 템플릿: 동기화 실패 (Sync Failed)
+  # ===================================
+  template.app-sync-failed: |
+    webhook:
+      frontend-nonprod:
+        method: POST
+        body: |
+          {
+            "embeds": [{
+              "title": "❌ 동기화 실패",
+              "description": "ArgoCD 동기화에 실패했습니다.",
+              "color": 15158332,
+              "fields": [
+                {
+                  "name": "🌍 Environment",
+                  "value": "{{ index .app.metadata.labels "pinhouse.co.kr/environment" | upper }}",
+                  "inline": true
+                },
+                {
+                  "name": "📦 Application",
+                  "value": "{{.app.metadata.name}}",
+                  "inline": true
+                },
+                {
+                  "name": "📍 Namespace",
+                  "value": "{{.app.spec.destination.namespace}}",
+                  "inline": true
+                },
+                {
+                  "name": "⚠️ Error",
+                  "value": "{{.app.status.operationState.message}}",
+                  "inline": false
+                },
+                {
+                  "name": "🔗 ArgoCD",
+                  "value": "[바로가기]({{.context.argocdUrl}}/applications/{{.app.metadata.name}})",
+                  "inline": false
+                }
+              ]
+            }]
+          }
+      backend-nonprod:
+        method: POST
+        body: |
+          {
+            "embeds": [{
+              "title": "❌ 동기화 실패",
+              "description": "ArgoCD 동기화에 실패했습니다.",
+              "color": 15158332,
+              "fields": [
+                {
+                  "name": "🌍 Environment",
+                  "value": "{{ index .app.metadata.labels "pinhouse.co.kr/environment" | upper }}",
+                  "inline": true
+                },
+                {
+                  "name": "📦 Application",
+                  "value": "{{.app.metadata.name}}",
+                  "inline": true
+                },
+                {
+                  "name": "📍 Namespace",
+                  "value": "{{.app.spec.destination.namespace}}",
+                  "inline": true
+                },
+                {
+                  "name": "⚠️ Error",
+                  "value": "{{.app.status.operationState.message}}",
+                  "inline": false
+                },
+                {
+                  "name": "🔗 ArgoCD",
+                  "value": "[바로가기]({{.context.argocdUrl}}/applications/{{.app.metadata.name}})",
+                  "inline": false
+                }
+              ]
+            }]
+          }
+      ai-nonprod:
+        method: POST
+        body: |
+          {
+            "embeds": [{
+              "title": "❌ 동기화 실패",
+              "description": "ArgoCD 동기화에 실패했습니다.",
+              "color": 15158332,
+              "fields": [
+                {
+                  "name": "🌍 Environment",
+                  "value": "{{ index .app.metadata.labels "pinhouse.co.kr/environment" | upper }}",
+                  "inline": true
+                },
+                {
+                  "name": "📦 Application",
+                  "value": "{{.app.metadata.name}}",
+                  "inline": true
+                },
+                {
+                  "name": "📍 Namespace",
+                  "value": "{{.app.spec.destination.namespace}}",
+                  "inline": true
+                },
+                {
+                  "name": "⚠️ Error",
+                  "value": "{{.app.status.operationState.message}}",
+                  "inline": false
+                },
+                {
+                  "name": "🔗 ArgoCD",
+                  "value": "[바로가기]({{.context.argocdUrl}}/applications/{{.app.metadata.name}})",
+                  "inline": false
+                }
+              ]
+            }]
+          }
+      frontend-prod:
+        method: POST
+        body: |
+          {
+            "embeds": [{
+              "title": "❌ 동기화 실패",
+              "description": "ArgoCD 동기화에 실패했습니다.",
+              "color": 15158332,
+              "fields": [
+                {
+                  "name": "🌍 Environment",
+                  "value": "{{ index .app.metadata.labels "pinhouse.co.kr/environment" | upper }}",
+                  "inline": true
+                },
+                {
+                  "name": "📦 Application",
+                  "value": "{{.app.metadata.name}}",
+                  "inline": true
+                },
+                {
+                  "name": "📍 Namespace",
+                  "value": "{{.app.spec.destination.namespace}}",
+                  "inline": true
+                },
+                {
+                  "name": "⚠️ Error",
+                  "value": "{{.app.status.operationState.message}}",
+                  "inline": false
+                },
+                {
+                  "name": "🔗 ArgoCD",
+                  "value": "[바로가기]({{.context.argocdUrl}}/applications/{{.app.metadata.name}})",
+                  "inline": false
+                }
+              ]
+            }]
+          }
+      backend-prod:
+        method: POST
+        body: |
+          {
+            "embeds": [{
+              "title": "❌ 동기화 실패",
+              "description": "ArgoCD 동기화에 실패했습니다.",
+              "color": 15158332,
+              "fields": [
+                {
+                  "name": "🌍 Environment",
+                  "value": "{{ index .app.metadata.labels "pinhouse.co.kr/environment" | upper }}",
+                  "inline": true
+                },
+                {
+                  "name": "📦 Application",
+                  "value": "{{.app.metadata.name}}",
+                  "inline": true
+                },
+                {
+                  "name": "📍 Namespace",
+                  "value": "{{.app.spec.destination.namespace}}",
+                  "inline": true
+                },
+                {
+                  "name": "⚠️ Error",
+                  "value": "{{.app.status.operationState.message}}",
+                  "inline": false
+                },
+                {
+                  "name": "🔗 ArgoCD",
+                  "value": "[바로가기]({{.context.argocdUrl}}/applications/{{.app.metadata.name}})",
+                  "inline": false
+                }
+              ]
+            }]
+          }
+      ai-prod:
+        method: POST
+        body: |
+          {
+            "embeds": [{
+              "title": "❌ 동기화 실패",
+              "description": "ArgoCD 동기화에 실패했습니다.",
+              "color": 15158332,
+              "fields": [
+                {
+                  "name": "🌍 Environment",
+                  "value": "{{ index .app.metadata.labels "pinhouse.co.kr/environment" | upper }}",
+                  "inline": true
+                },
+                {
+                  "name": "📦 Application",
+                  "value": "{{.app.metadata.name}}",
+                  "inline": true
+                },
+                {
+                  "name": "📍 Namespace",
+                  "value": "{{.app.spec.destination.namespace}}",
+                  "inline": true
+                },
+                {
+                  "name": "⚠️ Error",
+                  "value": "{{.app.status.operationState.message}}",
+                  "inline": false
+                },
+                {
+                  "name": "🔗 ArgoCD",
+                  "value": "[바로가기]({{.context.argocdUrl}}/applications/{{.app.metadata.name}})",
+                  "inline": false
+                }
+              ]
+            }]
+          }
+
+  # ===================================
+  # 템플릿: 헬스 체크 이상 (Health Degraded)
+  # ===================================
+  template.app-health-degraded: |
+    webhook:
+      frontend-nonprod:
+        method: POST
+        body: |
+          {
+            "embeds": [{
+              "title": "⚠️ 헬스 체크 이상",
+              "description": "애플리케이션 헬스 상태가 비정상입니다.",
+              "color": 16776960,
+              "fields": [
+                {
+                  "name": "🌍 Environment",
+                  "value": "{{ index .app.metadata.labels "pinhouse.co.kr/environment" | upper }}",
+                  "inline": true
+                },
+                {
+                  "name": "📦 Application",
+                  "value": "{{.app.metadata.name}}",
+                  "inline": true
+                },
+                {
+                  "name": "🏥 Health Status",
+                  "value": "{{.app.status.health.status}}",
+                  "inline": true
+                },
+                {
+                  "name": "🔗 ArgoCD",
+                  "value": "[바로가기]({{.context.argocdUrl}}/applications/{{.app.metadata.name}})",
+                  "inline": false
+                }
+              ]
+            }]
+          }
+      backend-nonprod:
+        method: POST
+        body: |
+          {
+            "embeds": [{
+              "title": "⚠️ 헬스 체크 이상",
+              "description": "애플리케이션 헬스 상태가 비정상입니다.",
+              "color": 16776960,
+              "fields": [
+                {
+                  "name": "🌍 Environment",
+                  "value": "{{ index .app.metadata.labels "pinhouse.co.kr/environment" | upper }}",
+                  "inline": true
+                },
+                {
+                  "name": "📦 Application",
+                  "value": "{{.app.metadata.name}}",
+                  "inline": true
+                },
+                {
+                  "name": "🏥 Health Status",
+                  "value": "{{.app.status.health.status}}",
+                  "inline": true
+                },
+                {
+                  "name": "🔗 ArgoCD",
+                  "value": "[바로가기]({{.context.argocdUrl}}/applications/{{.app.metadata.name}})",
+                  "inline": false
+                }
+              ]
+            }]
+          }
+      ai-nonprod:
+        method: POST
+        body: |
+          {
+            "embeds": [{
+              "title": "⚠️ 헬스 체크 이상",
+              "description": "애플리케이션 헬스 상태가 비정상입니다.",
+              "color": 16776960,
+              "fields": [
+                {
+                  "name": "🌍 Environment",
+                  "value": "{{ index .app.metadata.labels "pinhouse.co.kr/environment" | upper }}",
+                  "inline": true
+                },
+                {
+                  "name": "📦 Application",
+                  "value": "{{.app.metadata.name}}",
+                  "inline": true
+                },
+                {
+                  "name": "🏥 Health Status",
+                  "value": "{{.app.status.health.status}}",
+                  "inline": true
+                },
+                {
+                  "name": "🔗 ArgoCD",
+                  "value": "[바로가기]({{.context.argocdUrl}}/applications/{{.app.metadata.name}})",
+                  "inline": false
+                }
+              ]
+            }]
+          }
+      frontend-prod:
+        method: POST
+        body: |
+          {
+            "embeds": [{
+              "title": "⚠️ 헬스 체크 이상",
+              "description": "애플리케이션 헬스 상태가 비정상입니다.",
+              "color": 16776960,
+              "fields": [
+                {
+                  "name": "🌍 Environment",
+                  "value": "{{ index .app.metadata.labels "pinhouse.co.kr/environment" | upper }}",
+                  "inline": true
+                },
+                {
+                  "name": "📦 Application",
+                  "value": "{{.app.metadata.name}}",
+                  "inline": true
+                },
+                {
+                  "name": "🏥 Health Status",
+                  "value": "{{.app.status.health.status}}",
+                  "inline": true
+                },
+                {
+                  "name": "🔗 ArgoCD",
+                  "value": "[바로가기]({{.context.argocdUrl}}/applications/{{.app.metadata.name}})",
+                  "inline": false
+                }
+              ]
+            }]
+          }
+      backend-prod:
+        method: POST
+        body: |
+          {
+            "embeds": [{
+              "title": "⚠️ 헬스 체크 이상",
+              "description": "애플리케이션 헬스 상태가 비정상입니다.",
+              "color": 16776960,
+              "fields": [
+                {
+                  "name": "🌍 Environment",
+                  "value": "{{ index .app.metadata.labels "pinhouse.co.kr/environment" | upper }}",
+                  "inline": true
+                },
+                {
+                  "name": "📦 Application",
+                  "value": "{{.app.metadata.name}}",
+                  "inline": true
+                },
+                {
+                  "name": "🏥 Health Status",
+                  "value": "{{.app.status.health.status}}",
+                  "inline": true
+                },
+                {
+                  "name": "🔗 ArgoCD",
+                  "value": "[바로가기]({{.context.argocdUrl}}/applications/{{.app.metadata.name}})",
+                  "inline": false
+                }
+              ]
+            }]
+          }
+      ai-prod:
+        method: POST
+        body: |
+          {
+            "embeds": [{
+              "title": "⚠️ 헬스 체크 이상",
+              "description": "애플리케이션 헬스 상태가 비정상입니다.",
+              "color": 16776960,
+              "fields": [
+                {
+                  "name": "🌍 Environment",
+                  "value": "{{ index .app.metadata.labels "pinhouse.co.kr/environment" | upper }}",
+                  "inline": true
+                },
+                {
+                  "name": "📦 Application",
+                  "value": "{{.app.metadata.name}}",
+                  "inline": true
+                },
+                {
+                  "name": "🏥 Health Status",
+                  "value": "{{.app.status.health.status}}",
+                  "inline": true
+                },
+                {
+                  "name": "🔗 ArgoCD",
+                  "value": "[바로가기]({{.context.argocdUrl}}/applications/{{.app.metadata.name}})",
+                  "inline": false
+                }
+              ]
+            }]
+          }
+
+  # ===================================
+  # 트리거 설정
+  # ===================================
+  # 배포 완료 시 알림
+  trigger.on-deployed: |
+    - description: Application is synced and healthy
+      send:
+      - app-deployed
+      when: app.status.operationState.phase in ['Succeeded'] and app.status.health.status == 'Healthy'
+
+  # 동기화 실패 시 알림
+  trigger.on-sync-failed: |
+    - description: Application syncing has failed
+      send:
+      - app-sync-failed
+      when: app.status.operationState.phase in ['Error', 'Failed']
+
+  # 헬스 체크 이상 시 알림
+  trigger.on-health-degraded: |
+    - description: Application has degraded
+      send:
+      - app-health-degraded
+      when: app.status.health.status == 'Degraded'

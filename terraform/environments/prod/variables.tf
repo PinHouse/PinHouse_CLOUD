@@ -143,6 +143,35 @@ variable "google_api_domain_option" {
 }
 
 # ========================================
+# Secret Manager 관련 변수
+# ========================================
+variable "secret_manager_secret_ids" {
+  description = "생성할 Secret Manager secret ID 목록입니다. 값 자체는 생성하지 않고 secret container만 생성합니다."
+  type        = set(string)
+  default     = []
+}
+
+variable "secret_manager_secret_iam_bindings" {
+  description = "Secret Manager secret별 IAM 바인딩 정의 목록입니다."
+  type = map(object({
+    secret_id = string
+    role      = string
+    members   = list(string)
+  }))
+  default = {}
+}
+
+variable "secret_manager_secret_iam_members" {
+  description = "Secret Manager secret별 IAM 멤버 정의 목록입니다."
+  type = map(object({
+    secret_id = string
+    role      = string
+    member    = string
+  }))
+  default = {}
+}
+
+# ========================================
 # 컴퓨트 관련 변수
 # ========================================
 variable "k8s_master_instance_group_size" {
