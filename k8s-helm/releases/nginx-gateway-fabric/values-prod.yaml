@@ -1,0 +1,16 @@
+fullnameOverride: ngf-nginx-gateway-fabric
+
+# GatewayClass 설정
+nginxGateway:
+  gatewayClassName: nginx
+  gatewayControllerName: gateway.nginx.org/nginx-gateway-controller
+
+# Service 설정
+nginx:
+  service:
+    type: NodePort
+    nodePorts:
+      - port: 30080
+        listenerPort: 80
+      - port: 30443
+        listenerPort: 443

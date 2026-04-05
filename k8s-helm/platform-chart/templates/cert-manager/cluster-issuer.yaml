@@ -1,0 +1,56 @@
+{{- if .Values.certManager.enabled }}
+{{- if .Values.certManager.letsencrypt.staging.enabled }}
+---
+# Let's Encrypt Staging (테스트용 - rate limit 없음, 먼저 이걸로 검증)
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+
+# 기본 정보
+metadata:
+  name: letsencrypt-staging
+
+# 스펙
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: {{ .Values.certManager.acmeEmail }}
+    privateKeySecretRef:
+      name: letsencrypt-staging-key
+    solvers:
+
+      # DNS 설정으로 변경
+      - dns01:
+          cloudDNS:
+            # GCP 프로젝트 ID
+            project: {{ .Values.certManager.cloudDNS.projectId }}
+
+{{- end }}
+{{- if .Values.certManager.letsencrypt.production.enabled }}
+
+---
+# Let's Encrypt Production (실제 인증서)
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+
+# 기본 정보
+metadata:
+  name: letsencrypt-prod
+
+# 스펙
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: {{ .Values.certManager.acmeEmail }}
+    privateKeySecretRef:
+      name: letsencrypt-prod-key
+    solvers:
+
+      # DNS 설정으로 변경
+      - dns01:
+          cloudDNS:
+            # GCP 프로젝트 ID
+            project: {{ .Values.certManager.cloudDNS.projectId }}
+
+
+{{- end }}
+{{- end }}
