@@ -58,6 +58,19 @@ output "bucket_urls" {
 }
 
 # ========================================
+# Artifact Registry 출력값
+# ========================================
+output "artifact_registry_repositories" {
+  description = "생성된 Artifact Registry 저장소 정보입니다."
+  value       = module.artifact_registry.repositories
+}
+
+output "artifact_registry_docker_repository_urls" {
+  description = "생성된 Docker Artifact Registry 저장소 URL 목록입니다."
+  value       = module.artifact_registry.docker_repository_urls
+}
+
+# ========================================
 # 로드 밸런서 출력값
 # ========================================
 output "load_balancer_ip" {
@@ -90,5 +103,19 @@ output "k8s_network_configuration" {
     service_cidr   = var.k8s_service_cidr
     calico_version = var.calico_version
     encapsulation  = "IPIP"
+  }
+}
+
+# ========================================
+# Artifact Registry 네트워크 출력값
+# ========================================
+output "artifact_registry_private_access" {
+  description = "Artifact Registry용 Private Google Access 구성 정보입니다."
+  value = {
+    domain_option                  = module.artifact_registry_private_access.google_api_domain_option
+    googleapis_private_zone_name   = module.artifact_registry_private_access.googleapis_private_zone_name
+    pkg_dev_private_zone_name      = module.artifact_registry_private_access.pkg_dev_private_zone_name
+    google_api_route_name          = module.artifact_registry_private_access.google_api_route_name
+    direct_connectivity_route_name = module.artifact_registry_private_access.google_api_direct_connectivity_route_name
   }
 }
