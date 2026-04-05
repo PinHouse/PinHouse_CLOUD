@@ -77,6 +77,72 @@ variable "enable_nat" {
 }
 
 # ========================================
+# Artifact Registry 관련 변수
+# ========================================
+variable "artifact_registry_location" {
+  description = "Artifact Registry 저장소 기본 생성 위치입니다."
+  type        = string
+  default     = "asia-northeast3"
+}
+
+variable "artifact_registry_repositories" {
+  description = "생성할 Artifact Registry 저장소 정의 목록입니다."
+  type = map(object({
+    repository_id  = string
+    format         = string
+    description    = optional(string)
+    location       = optional(string)
+    immutable_tags = optional(bool)
+    common_tags    = optional(map(string))
+  }))
+  default = {
+    fe = {
+      repository_id  = "pinhouse-prod-fe"
+      format         = "DOCKER"
+      description    = "프로덕션 환경용 프런트엔드 이미지 저장소"
+      immutable_tags = false
+    }
+    be = {
+      repository_id  = "pinhouse-prod-be"
+      format         = "DOCKER"
+      description    = "프로덕션 환경용 백엔드 이미지 저장소"
+      immutable_tags = false
+    }
+  }
+}
+
+variable "artifact_registry_repository_iam_bindings" {
+  description = "Artifact Registry 저장소 IAM 바인딩 정의 목록입니다."
+  type = map(object({
+    repository_key = string
+    role           = string
+    members        = list(string)
+  }))
+  default = {}
+}
+
+variable "artifact_registry_repository_iam_members" {
+  description = "Artifact Registry 저장소 IAM 멤버 정의 목록입니다."
+  type = map(object({
+    repository_key = string
+    role           = string
+    member         = string
+  }))
+  default = {}
+}
+
+variable "google_api_domain_option" {
+  description = "Artifact Registry와 Google APIs에 사용할 Private Google Access 도메인 옵션입니다."
+  type        = string
+  default     = "private.googleapis.com"
+
+  validation {
+    condition     = contains(["private.googleapis.com", "restricted.googleapis.com"], var.google_api_domain_option)
+    error_message = "google_api_domain_option은 private.googleapis.com 또는 restricted.googleapis.com 중 하나여야 합니다."
+  }
+}
+
+# ========================================
 # 컴퓨트 관련 변수
 # ========================================
 variable "k8s_master_instance_group_size" {
@@ -100,7 +166,7 @@ variable "enable_autoscaling" {
 variable "autoscaling_min_replicas" {
   description = "오토스케일링 최소 인스턴스 수입니다."
   type        = number
-  default     = 1
+  default     = 2
 }
 
 variable "autoscaling_max_replicas" {
@@ -112,13 +178,13 @@ variable "autoscaling_max_replicas" {
 variable "k8s_master_machine_type" {
   description = "Kubernetes 마스터 노드에 사용할 머신 타입입니다."
   type        = string
-  default     = "e2-standard-2"
+  default     = "e2-custom-2-4096"
 }
 
 variable "k8s_worker_machine_type" {
   description = "Kubernetes 워커 노드에 사용할 머신 타입입니다."
   type        = string
-  default     = "e2-standard-2"
+  default     = "e2-custom-2-4096"
 }
 
 variable "k8s_node_boot_disk_size_gb" {
