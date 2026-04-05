@@ -166,7 +166,7 @@ variable "enable_autoscaling" {
 variable "autoscaling_min_replicas" {
   description = "오토스케일링 최소 인스턴스 수입니다."
   type        = number
-  default     = 1
+  default     = 2
 }
 
 variable "autoscaling_max_replicas" {
