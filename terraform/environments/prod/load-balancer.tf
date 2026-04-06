@@ -83,7 +83,8 @@ resource "google_compute_region_backend_service" "nginx_gateway_http" {
   health_checks         = [google_compute_region_health_check.nginx_gateway_http[0].id]
 
   backend {
-    group = module.k8s_worker_nodes.instance_group_instance_group
+    group           = module.k8s_worker_nodes.instance_group_instance_group
+    capacity_scaler = 1.0
   }
 }
 
@@ -103,7 +104,8 @@ resource "google_compute_region_backend_service" "nginx_gateway_https" {
   health_checks         = [google_compute_region_health_check.nginx_gateway_https[0].id]
 
   backend {
-    group = module.k8s_worker_nodes.instance_group_instance_group
+    group           = module.k8s_worker_nodes.instance_group_instance_group
+    capacity_scaler = 1.0
   }
 }
 
