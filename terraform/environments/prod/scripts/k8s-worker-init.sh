@@ -67,6 +67,59 @@ apt-get install -y kubelet kubeadm
 apt-mark hold kubelet kubeadm
 
 # ========================================
+# kubelet Artifact Registry credential provider 설정
+# ========================================
+mkdir -p /etc/kubernetes /opt/image-credential-provider
+
+cat <<'PROVIDER_EOF' >/opt/image-credential-provider/gcp-artifact-registry-provider
+#!/usr/bin/env bash
+set -euo pipefail
+
+# kubelet 요청 본문은 현재 인증 계산에 사용하지 않으므로 읽고 종료합니다.
+cat >/dev/null
+
+token_response="$(curl -fsSL -H 'Metadata-Flavor: Google' \
+  http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token)"
+access_token="$(printf '%s' "${token_response}" | sed -n 's/.*"access_token"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
+
+if [ -z "${access_token}" ]; then
+  echo "메타데이터 서버에서 Artifact Registry access token을 가져오지 못했습니다." >&2
+  exit 1
+fi
+
+cat <<JSON_EOF
+{
+  "apiVersion": "credentialprovider.kubelet.k8s.io/v1",
+  "kind": "CredentialProviderResponse",
+  "cacheKeyType": "Registry",
+  "auth": {
+    "*.pkg.dev": {
+      "username": "oauth2accesstoken",
+      "password": "${access_token}"
+    }
+  }
+}
+JSON_EOF
+PROVIDER_EOF
+
+chmod 0755 /opt/image-credential-provider/gcp-artifact-registry-provider
+
+cat <<'EOF' >/etc/kubernetes/credential-provider-config.yaml
+apiVersion: kubelet.config.k8s.io/v1
+kind: CredentialProviderConfig
+providers:
+  - name: gcp-artifact-registry-provider
+    apiVersion: credentialprovider.kubelet.k8s.io/v1
+    matchImages:
+      - "*.pkg.dev"
+    defaultCacheDuration: "30m"
+EOF
+
+cat <<'EOF' >/etc/default/kubelet
+KUBELET_EXTRA_ARGS="--image-credential-provider-config=/etc/kubernetes/credential-provider-config.yaml --image-credential-provider-bin-dir=/opt/image-credential-provider"
+EOF
+
+# ========================================
 # 서비스 활성화
 # ========================================
 systemctl enable --now kubelet
