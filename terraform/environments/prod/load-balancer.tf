@@ -84,6 +84,8 @@ resource "google_compute_region_backend_service" "nginx_gateway_http" {
 
   backend {
     group           = module.k8s_worker_nodes.instance_group_instance_group
+    balancing_mode  = "UTILIZATION"
+    max_utilization = 0.6
     capacity_scaler = 1.0
   }
 }
@@ -105,6 +107,8 @@ resource "google_compute_region_backend_service" "nginx_gateway_https" {
 
   backend {
     group           = module.k8s_worker_nodes.instance_group_instance_group
+    balancing_mode  = "UTILIZATION"
+    max_utilization = 0.8
     capacity_scaler = 1.0
   }
 }
@@ -141,10 +145,13 @@ resource "google_compute_forwarding_rule" "nginx_gateway_http" {
   region                = var.region
   ip_protocol           = "TCP"
   load_balancing_scheme = "EXTERNAL_MANAGED"
+  network               = module.vpc.vpc_self_link
   port_range            = "80"
   target                = google_compute_region_target_tcp_proxy.nginx_gateway_http[0].id
   network_tier          = "PREMIUM"
   ip_address            = google_compute_address.load_balancer_ip[0].address
+
+  depends_on = [google_compute_subnetwork.load_balancer_proxy_only]
 }
 
 # ========================================
@@ -157,8 +164,11 @@ resource "google_compute_forwarding_rule" "nginx_gateway_https" {
   region                = var.region
   ip_protocol           = "TCP"
   load_balancing_scheme = "EXTERNAL_MANAGED"
+  network               = module.vpc.vpc_self_link
   port_range            = "443"
   target                = google_compute_region_target_tcp_proxy.nginx_gateway_https[0].id
   network_tier          = "PREMIUM"
   ip_address            = google_compute_address.load_balancer_ip[0].address
+
+  depends_on = [google_compute_subnetwork.load_balancer_proxy_only]
 }
