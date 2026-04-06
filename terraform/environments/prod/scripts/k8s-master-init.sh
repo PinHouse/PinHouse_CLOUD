@@ -80,9 +80,9 @@ cat >/dev/null
 
 token_response="$(curl -fsSL -H 'Metadata-Flavor: Google' \
   http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token)"
-access_token="$(printf '%s' "${token_response}" | sed -n 's/.*"access_token"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
+access_token="$(printf '%s' "$${token_response}" | sed -n 's/.*"access_token"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
 
-if [ -z "${access_token}" ]; then
+if [ -z "$${access_token}" ]; then
   echo "메타데이터 서버에서 Artifact Registry access token을 가져오지 못했습니다." >&2
   exit 1
 fi
@@ -95,7 +95,7 @@ cat <<JSON_EOF
   "auth": {
     "*.pkg.dev": {
       "username": "oauth2accesstoken",
-      "password": "${access_token}"
+      "password": "$${access_token}"
     }
   }
 }
