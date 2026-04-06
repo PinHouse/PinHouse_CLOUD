@@ -2,36 +2,34 @@
 # 프로덕션 방화벽 값
 # ========================================
 locals {
+  gcp_load_balancer_health_check_source_ranges = [
+    "35.191.0.0/16",
+    "130.211.0.0/22",
+  ]
+
   prod_firewall_rules = merge(
+    var.create_load_balancer ? {
+      # 외부 프록시 NLB와 헬스 체크가 워커 NodePort로 접근할 수 있도록 허용합니다.
+      allow_nginx_gateway_nodeports = {
+        name = "${var.vpc_name}-allow-nginx-gateway-nodeports"
+        allow = [
+          {
+            protocol = "tcp"
+            ports = [
+              tostring(var.nginx_gateway_http_node_port),
+              tostring(var.nginx_gateway_https_node_port),
+            ]
+          }
+        ]
+        source_ranges = concat(
+          local.gcp_load_balancer_health_check_source_ranges,
+          [var.load_balancer_proxy_only_subnet_cidr]
+        )
+        target_tags = ["k8s-worker"]
+        priority    = 1000
+      }
+    } : {},
     {
-      # 워커 노드가 외부 HTTP 트래픽을 받을 수 있도록 허용합니다.
-      allow_http = {
-        name = "${var.vpc_name}-allow-http"
-        allow = [
-          {
-            protocol = "tcp"
-            ports    = ["80"]
-          }
-        ]
-        source_ranges = ["0.0.0.0/0"]
-        target_tags   = ["k8s-worker"]
-        priority      = 1000
-      }
-
-      # 워커 노드가 외부 HTTPS 트래픽을 받을 수 있도록 허용합니다.
-      allow_https = {
-        name = "${var.vpc_name}-allow-https"
-        allow = [
-          {
-            protocol = "tcp"
-            ports    = ["443"]
-          }
-        ]
-        source_ranges = ["0.0.0.0/0"]
-        target_tags   = ["k8s-worker"]
-        priority      = 1000
-      }
-
       # 마스터와 워커 노드가 Kubernetes API 서버에 접근할 수 있도록 허용합니다.
       allow_k8s_api_from_nodes = {
         name = "${var.vpc_name}-allow-k8s-api-from-nodes"
@@ -102,12 +100,13 @@ locals {
         priority    = 1000
       }
 
-      # Calico IP-in-IP 터널링 트래픽을 허용합니다.
-      allow_calico_ipip = {
-        name = "${var.vpc_name}-allow-calico-ipip"
+      # Calico VXLAN 터널링 트래픽을 허용합니다.
+      allow_calico_vxlan = {
+        name = "${var.vpc_name}-allow-calico-vxlan"
         allow = [
           {
-            protocol = "ipip"
+            protocol = "udp"
+            ports    = ["4789"]
           }
         ]
         source_tags = ["k8s-master", "k8s-worker"]

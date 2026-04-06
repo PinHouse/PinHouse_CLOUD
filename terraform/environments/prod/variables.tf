@@ -282,6 +282,24 @@ variable "create_load_balancer" {
   default     = true
 }
 
+variable "load_balancer_proxy_only_subnet_cidr" {
+  description = "외부 프록시 네트워크 로드 밸런서가 사용할 proxy-only subnet CIDR입니다."
+  type        = string
+  default     = "10.2.10.0/23"
+}
+
+variable "nginx_gateway_http_node_port" {
+  description = "NGINX Gateway Fabric HTTP NodePort 포트입니다."
+  type        = number
+  default     = 30080
+}
+
+variable "nginx_gateway_https_node_port" {
+  description = "NGINX Gateway Fabric HTTPS NodePort 포트입니다."
+  type        = number
+  default     = 30443
+}
+
 # ========================================
 # 공통 태그 변수
 # ========================================

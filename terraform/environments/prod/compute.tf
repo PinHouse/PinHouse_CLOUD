@@ -75,7 +75,17 @@ module "k8s_worker_nodes" {
   boot_disk_type     = "pd-balanced"
   enable_external_ip = false
   startup_script     = file("${path.module}/scripts/k8s-worker-init.sh")
-  tags               = ["k8s-worker", var.environment]
+  named_ports = [
+    {
+      name = "ngf-http"
+      port = var.nginx_gateway_http_node_port
+    },
+    {
+      name = "ngf-https"
+      port = var.nginx_gateway_https_node_port
+    }
+  ]
+  tags = ["k8s-worker", var.environment]
 
   # 태그
   common_tags = merge(var.common_tags, {
