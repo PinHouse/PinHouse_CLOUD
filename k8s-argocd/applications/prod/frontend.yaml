@@ -41,7 +41,7 @@ spec:
   # Kustomize 소스 설정
   source:
     # GitOps URL
-    repoURL: https://github.com/100-hours-a-week/9-team-Devths-CLOUD
+    repoURL: https://github.com/PinHouse/PinHouse_CLOUD
     # Main 브랜치 참조 (환경은 overlay로 구분)
     targetRevision: main
     # Kustomize 오버레이 경로
