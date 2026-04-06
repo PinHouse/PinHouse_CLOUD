@@ -80,6 +80,9 @@ allowed_cors_origins = [
 # 로드 밸런서 관련 값
 # ========================================
 create_load_balancer = true
+load_balancer_proxy_only_subnet_cidr = "10.2.10.0/23"
+nginx_gateway_http_node_port         = 30080
+nginx_gateway_https_node_port        = 30443
 
 # ========================================
 # Secret Manager 관련 값

@@ -88,7 +88,7 @@ output "secret_manager_secret_ids" {
 # ========================================
 output "load_balancer_ip" {
   description = "로드 밸런서 IP 주소입니다."
-  value       = var.create_load_balancer ? module.load_balancer[0].forwarding_rule_ip_address : null
+  value       = var.create_load_balancer ? google_compute_address.load_balancer_ip[0].address : null
 }
 
 # ========================================
