@@ -30,3 +30,6 @@ releases/argocd/values-*.yaml
 # 릴리스 로컬 문서
 # ========================================
 releases/*/README.md
+
+# Helm dependency artifacts
+releases/monitoring/charts/
