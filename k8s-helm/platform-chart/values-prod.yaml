@@ -5,7 +5,7 @@ certManager:
   enabled: true
 
   # 🔒 실제 이메일 주소로 변경
-  acmeEmail: "your-email@example.com"
+  acmeEmail: "pinhousekr@gmail.com"
 
   # 테스트 시 true, 검증 완료 후 false
   letsencrypt:
@@ -16,7 +16,7 @@ certManager:
 
   # DNS-01 Challenge (CloudDNS)
   cloudDNS:
-    projectId: "projectId"
+    projectId: "prod-pinhouse"
 
 # 게이트웨이
 gateway:
@@ -33,63 +33,60 @@ gateway:
   http_redirect:
     enabled: true  # 모든 HTTP 요청을 HTTPS로 리다이렉트
 
-  # 환경별 리스너 (for문으로 순회)
+  # 환경별 리스너
   environments:
-    - name: dev
-      enabled: false  # Prod 환경에서는 비활성화
-      tlsSecretName: your-tls-dev
-      services:
-        - name: web
-          hostname: dev.your-domain.com
-        - name: api
-          hostname: dev.api.your-domain.com
-
-    - name: stg
-      enabled: false  # Prod 환경에서는 비활성화
-      tlsSecretName: your-tls-stg
-      services:
-        - name: web
-          hostname: stg.your-domain.com
-        - name: api
-          hostname: stg.api.your-domain.com
-
     - name: prod
-      enabled: true  # Prod 환경 활성화
-      tlsSecretName: your-tls-prod
+      enabled: true
+      tlsSecretName: pinhouse-tls-prod
       services:
         - name: web
-          hostname: your-domain.com           # 🔒 실제 도메인으로 변경
+          hostname: pinhouse.co.kr
         - name: www
-          hostname: www.your-domain.com
+          hostname: www.pinhouse.co.kr
         - name: api
-          hostname: api.your-domain.com       # 🔒 실제 도메인으로 변경
+          hostname: api.pinhouse.co.kr
 
-  # 특수 리스너 (ArgoCD 등)
+  # Argo CD 리스너
   listeners:
     argo:
       enabled: true
-      domain: prod.argo.your-domain.com  # 🔒 실제 도메인으로 변경
-      tlsSecretName: your-tls-argo-prod
+      domain: argo.pinhouse.co.kr
+      tlsSecretName: pinhouse-tls-argo
 
-# 접근 제어 (Access Control)
+# 접근 제어 (Access Control) - 보안 강화 버전
 accessControl:
   enabled: true
   blockedPaths:
-    - name: swagger-api-docs
-      hostnames:
-        - api.your-domain.com  # 🔒 실제 도메인으로 변경
+    # 1. 백엔드 (API) - 스웨거 및 API 문서 차단
+    - name: api-prod-swagger
+      hostnames: ["api.pinhouse.co.kr"]
       paths:
-        - /swagger-ui
-        - /v3/api-docs
+        - "/swagger-ui"      # UI 페이지 전체 (PathPrefix로 하위 경로 모두 포함)
+        - "/v3/api-docs"     # JSON 정의 파일 전체
+
+    # 2. 백엔드 (API) - Actuator 및 메트릭 차단 (규칙 20번 반영)
+    - name: api-prod-management
+      hostnames: ["api.pinhouse.co.kr"]
+      paths:
+        - "/actuator"        # Spring Boot 관리 엔드포인트 전체
+        - "/metrics"         # 일반 메트릭 경로
+        - "/prometheus"      # 프로메테우스 경로
+
+    # 4. 공통/기타 - 프로메테우스 및 민감 경로 (규칙 10번 관련)
+    - name: common-prod-metrics
+      hostnames: ["pinhouse.co.kr", "www.pinhouse.co.kr"]
+      paths:
+        - "/api/metrics"     # 규칙 10번에 명시된 경로 (하위 경로 모두 포함)
+        - "/prometheus"      # 프로메테우스 경로
+
 
 # 네트워크 정책
 networkPolicy:
-  enabled: true
+  enabled: false
 
-  # 🔒 실제 CIDR/IP 로 변경
   database:
     rds:
-      cidr: "172.16.0.0/16"
+      cidr: "192.16.0.0/16"
     ec2:
       ip: "10.0.0.0/16"
 
@@ -104,30 +101,33 @@ networkPolicy:
     https: 443
 
   namespaces:
+    # Nginx-Gateway
     - name: nginx-gateway
       enabled: true
+
+    # 서비스
     - name: app
       enabled: true
 
 # 인증서
 certificates:
   enabled: true
-  issuer: letsencrypt-staging
+  issuer: letsencrypt-prod
 
   certs:
-    - name: your-tls-prod
+    - name: pinhouse-tls-prod
       namespace: nginx-gateway
       dnsNames:
-        - domain.com
-        - www.domain.com
-        - api.domain.com
+        - pinhouse.co.kr
+        - www.pinhouse.co.kr
+        - api.pinhouse.co.kr
       enabled: true
 
     # 🔒 실제 도메인으로 변경
-    - name: your-tls-argo
+    - name: pinhouse-tls-argo
       namespace: nginx-gateway
       dnsNames:
-        - argo.your-domain.com
+        - argo.pinhouse.co.kr
       enabled: true
 
 # GCP Secret Manager 기반 시크릿 적용
@@ -141,11 +141,10 @@ externalSecrets:
       spec:
         provider:
           gcpsm:
-            projectID: your-gcp-project-id
+            projectID: prod-pinhouse
 
   # 시크릿
   secrets:
-
     # 백엔드 시크릿 적용
     - name: backend-secret-kv
       namespace: app
@@ -161,7 +160,7 @@ externalSecrets:
         dataFrom:
           - find:
               name:
-                regexp: "^Prod_BE_"  # 🔒 예: Prod_BE_DB_URL, Prod_BE_DB_PASSWORD
+                regexp: "^Prod_BE_"
               conversionStrategy: Default
               decodingStrategy: None
             rewrite:
