@@ -14,6 +14,8 @@ module "storage" {
 
   # 버킷 정의
   buckets = merge(
+
+    # 기본 버킷 추가
     var.create_storage_buckets ? tomap({
       static_assets = {
         name                        = "${var.project}-${var.environment}"
@@ -46,6 +48,28 @@ module "storage" {
           }
         ] : []
       }
-    }) : tomap({})
+    }) : tomap({}),
+
+    # 모니터링 버킷 추가
+    var.create_monitoring_buckets ? tomap({
+      loki = {
+        name                        = "${var.project}-${var.environment}-${var.monitoring_loki}"
+        storage_class               = "STANDARD"
+        uniform_bucket_level_access = true
+        versioning_enabled          = true
+        force_destroy               = false
+        public_access_prevention    = "enforced"
+        cors                        = []
+      }
+      tempo = {
+        name                        = "${var.project}-${var.environment}-${var.monitoring_tempo}"
+        storage_class               = "STANDARD"
+        uniform_bucket_level_access = true
+        versioning_enabled          = true
+        force_destroy               = false
+        public_access_prevention    = "enforced"
+        cors                        = []
+      }
+    }) : tomap({}),
   )
 }

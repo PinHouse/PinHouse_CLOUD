@@ -68,6 +68,7 @@ calico_version             = "v3.31.4"
 # 스토리지 관련 값
 # ========================================
 create_storage_buckets = true
+create_monitoring_buckets = true
 storage_location       = "ASIA-NORTHEAST3"
 
 # CORS 허용 Origin

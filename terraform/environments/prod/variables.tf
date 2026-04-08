@@ -261,6 +261,24 @@ variable "create_storage_buckets" {
   default     = true
 }
 
+variable "create_monitoring_buckets" {
+  description = "모니터링 버킷 생성 여부입니다."
+  type        = bool
+  default     = false
+}
+
+variable "monitoring_loki" {
+  description = "Loki에서 사용할 모니터링 라벨입니다."
+  type        = string
+  default     = "loki"
+}
+
+variable "monitoring_tempo" {
+  description = "Tempo에서 사용할 모니터링 라벨입니다."
+  type        = string
+  default     = "tempo"
+}
+
 variable "storage_location" {
   description = "스토리지 버킷을 생성할 위치입니다."
   type        = string
