@@ -3,8 +3,9 @@
 # ========================================
 platform-chart/**/*.yaml
 platform-chart/**/README.md
-!platform-chart/**/*.yaml.example
 !platform-chart/**/values.yaml
+!platform-chart/**/values-nonprod.yaml
+!platform-chart/**/values-prod.yaml
 
 # ========================================
 # 로컬 시크릿 매니페스트

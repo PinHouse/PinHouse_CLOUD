@@ -5,6 +5,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 
+# 기본 정보
 metadata:
   name: platform-root-prod
   namespace: argocd
@@ -14,20 +15,25 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 
+# 스펙
 spec:
   project: default
 
+  # Directory 소스 설정
   source:
+    # prod 플랫폼 하위 Application들을 읽어들이는 중간 root 앱입니다.
     repoURL: https://github.com/PinHouse/PinHouse_CLOUD
     targetRevision: main
     path: k8s-argocd/applications/prod/platform
     directory:
       recurse: false
 
+  # 배포 대상 클러스터
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
 
+  # 동기화 정책
   syncPolicy:
     automated:
       prune: true

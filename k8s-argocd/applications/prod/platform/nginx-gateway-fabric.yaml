@@ -5,6 +5,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 
+# 기본 정보
 metadata:
   name: platform-nginx-gateway-fabric-prod
   namespace: argocd
@@ -12,15 +13,18 @@ metadata:
     pinhouse.co.kr/environment: prod
     pinhouse.co.kr/component: platform
   annotations:
+    # Gateway API CRD 설치 이후에 게이트웨이 컨트롤러를 배포합니다.
     argocd.argoproj.io/sync-wave: "1"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 
+# 스펙
 spec:
   project: default
 
+  # 외부 Helm chart와 Git 저장소 values 파일을 함께 사용합니다.
   sources:
-    - repoURL: oci://ghcr.io/nginx/charts
+    - repoURL: ghcr.io/nginx/charts
       chart: nginx-gateway-fabric
       targetRevision: 2.4.2
       helm:
@@ -31,10 +35,12 @@ spec:
       targetRevision: main
       ref: values
 
+  # 배포 대상 클러스터
   destination:
     server: https://kubernetes.default.svc
     namespace: nginx-gateway
 
+  # 동기화 정책
   syncPolicy:
     automated:
       prune: true
