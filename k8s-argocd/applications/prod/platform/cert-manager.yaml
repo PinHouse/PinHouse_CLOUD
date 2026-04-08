@@ -1,0 +1,43 @@
+# ===================================
+# Prod Platform cert-manager
+# ===================================
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+
+metadata:
+  name: platform-cert-manager-prod
+  namespace: argocd
+  labels:
+    pinhouse.co.kr/environment: prod
+    pinhouse.co.kr/component: platform
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+
+spec:
+  project: default
+
+  sources:
+    - repoURL: oci://quay.io/jetstack/charts
+      chart: cert-manager
+      targetRevision: v1.19.2
+      helm:
+        releaseName: cert-manager
+        valueFiles:
+          - $values/k8s-helm/releases/cert-manager/values-prod.yaml
+    - repoURL: https://github.com/PinHouse/PinHouse_CLOUD
+      targetRevision: main
+      ref: values
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cert-manager
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
