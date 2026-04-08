@@ -1,0 +1,48 @@
+# ===================================
+# Prod Monitoring Root
+# ===================================
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+
+# 기본 정보
+metadata:
+  name: monitoring-root-prod
+  namespace: argocd
+
+  # 라벨 추가
+  labels:
+    pinhouse.co.kr/environment: prod
+    pinhouse.co.kr/component: monitoring
+
+  # Finalizers를 설정하면 Application 삭제 시 관련 리소스도 함께 삭제됨
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+
+# 스펙
+spec:
+  project: default
+
+  # Directory 소스 설정
+  source:
+    # GitOps URL
+    repoURL: https://github.com/PinHouse/PinHouse_CLOUD
+    # Main 브랜치 참조
+    targetRevision: main
+    # Monitoring 하위 애플리케이션 디렉터리
+    path: k8s-argocd/applications/prod/monitoring
+    directory:
+      recurse: false
+
+  # 배포 대상 클러스터
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+
+  # 동기화 정책
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

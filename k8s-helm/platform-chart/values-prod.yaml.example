@@ -168,3 +168,26 @@ externalSecrets:
               - regexp:
                   source: "^Prod_BE_(.*)$"
                   target: "$1"
+
+    # 모니터링 Grafana 관리자 시크릿 적용
+    - name: monitoring-secret-kv
+      namespace: monitoring
+      spec:
+        refreshInterval: 1h
+        secretStoreRef:
+          name: gcp-secret-manager
+          kind: ClusterSecretStore
+        target:
+          name: monitoring-secret-kv
+          creationPolicy: Owner
+          deletionPolicy: Retain
+        data:
+          - find:
+              name:
+                regexp: "^Prod_MONITORING_"
+              conversionStrategy: Default
+              decodingStrategy: None
+            rewrite:
+              - regexp:
+                  source: "^Prod_MONITORING_(.*)$"
+                  target: "$1"

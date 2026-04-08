@@ -1,0 +1,116 @@
+# ========================================
+# Prod Monitoring Core GitOps 값
+# ========================================
+
+kube-prometheus-stack:
+  grafana:
+    # Grafana 관리자 계정은 ExternalSecret이 만든 Kubernetes Secret을 사용합니다.
+    admin:
+      existingSecret: monitoring-secret-kv
+      userKey: GRAFANA_ADMIN_USER
+      passwordKey: GRAFANA_ADMIN_PASSWORD
+
+    # Grafana Pod 리소스는 대시보드 조회와 플러그인 초기화 여유를 고려한 값입니다.
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+    # 운영 환경에서는 Grafana 대시보드와 설정을 유지하기 위해 PVC를 사용합니다.
+    persistence:
+      enabled: true
+      type: sts
+      size: 20Gi
+      storageClassName: "gce-standard-rwo"
+
+  prometheus:
+    prometheusSpec:
+      # 운영 기준 메트릭 보관 기간과 최대 디스크 사용량입니다.
+      retention: 15d
+      retentionSize: 50GB
+      # 실제 scrape는 Alloy가 수행하고, Prometheus는 remote write receiver로 메트릭을 받습니다.
+      enableRemoteWriteReceiver: true
+
+      # Prometheus는 스크랩 대상이 늘어날수록 메모리 사용량이 커지므로
+      # 운영 환경에서는 요청/제한을 명시적으로 지정합니다.
+      resources:
+        requests:
+          cpu: 500m
+          memory: 2Gi
+        limits:
+          cpu: 2000m
+          memory: 4Gi
+
+      # Prometheus가 직접 ServiceMonitor/PodMonitor/Probe를 scrape하지 않도록 둡니다.
+      serviceMonitorSelectorNilUsesHelmValues: false
+      serviceMonitorSelector:
+        matchLabels:
+          "pinhouse.co.kr/scrape-via": "prometheus"
+      serviceMonitorNamespaceSelector: {}
+
+      podMonitorSelectorNilUsesHelmValues: false
+      podMonitorSelector:
+        matchLabels:
+          "pinhouse.co.kr/scrape-via": "prometheus"
+      podMonitorNamespaceSelector: {}
+
+      probeSelectorNilUsesHelmValues: false
+      probeSelector:
+        matchLabels:
+          "pinhouse.co.kr/scrape-via": "prometheus"
+      probeNamespaceSelector: {}
+
+      # 메트릭 장기 보관을 위해 PVC를 사용합니다.
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: "gce-standard-rwo"
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 50Gi
+
+  alertmanager:
+    # Alertmanager는 알림 라우팅 전용이라 상대적으로 작은 리소스로 시작합니다.
+    alertmanagerSpec:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi
+
+  prometheusOperator:
+    # Operator는 scrape 주체는 아니지만 Prometheus/Alertmanager 리소스를 생성하므로 계속 필요합니다.
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+  kube-state-metrics:
+    # Kubernetes 리소스 상태 수집용 컴포넌트입니다.
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 200m
+        memory: 512Mi
+
+  prometheus-node-exporter:
+    # 노드 메트릭 수집기라서 가볍게 시작하되 과도한 사용을 막기 위해 제한을 둡니다.
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi

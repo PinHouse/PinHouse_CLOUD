@@ -1,0 +1,72 @@
+# ========================================
+# Monitoring Loki 공통 값
+# ========================================
+
+loki:
+  fullnameOverride: monitoring-loki
+
+  # 초기 구성은 운영 복잡도를 낮추기 위해 SingleBinary로 둡니다.
+  deploymentMode: SingleBinary
+
+  loki:
+    auth_enabled: false
+
+    commonConfig:
+      replication_factor: 1
+
+    schemaConfig:
+      configs:
+        - from: "2024-04-01"
+          store: tsdb
+          object_store: gcs
+          schema: v13
+          index:
+            prefix: index_
+            period: 24h
+
+    limits_config:
+      retention_period: 168h
+
+    compactor:
+      retention_enabled: true
+      delete_request_store: gcs
+
+    storage:
+      type: gcs
+      bucketNames:
+        chunks: "replace-me-loki-bucket"
+        ruler: "replace-me-loki-bucket"
+        admin: "replace-me-loki-bucket"
+      gcs:
+        bucket_name: "replace-me-loki-bucket"
+
+  singleBinary:
+    replicas: 1
+
+    persistence:
+      enabled: false
+      size: 20Gi
+
+  # SingleBinary 외 다른 모드는 비활성화합니다.
+  write:
+    replicas: 0
+
+  read:
+    replicas: 0
+
+  backend:
+    replicas: 0
+
+  monitoring:
+    dashboards:
+      enabled: false
+    rules:
+      enabled: false
+    serviceMonitor:
+      enabled: true
+
+  test:
+    enabled: false
+
+  lokiCanary:
+    enabled: false

@@ -1,0 +1,43 @@
+# ===================================
+# Prod Platform Metrics Server
+# ===================================
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+
+metadata:
+  name: platform-metrics-server-prod
+  namespace: argocd
+  labels:
+    pinhouse.co.kr/environment: prod
+    pinhouse.co.kr/component: platform
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+
+spec:
+  project: default
+
+  sources:
+    - repoURL: https://kubernetes-sigs.github.io/metrics-server/
+      chart: metrics-server
+      targetRevision: 3.13.0
+      helm:
+        releaseName: metrics-server
+        valueFiles:
+          - $values/k8s-helm/releases/metrics-server/values-prod.yaml
+    - repoURL: https://github.com/PinHouse/PinHouse_CLOUD
+      targetRevision: main
+      ref: values
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
