@@ -24,7 +24,7 @@ spec:
 
   # 외부 Helm chart와 Git 저장소 values 파일을 함께 사용합니다.
   sources:
-    - repoURL: oci://ghcr.io/nginx/charts
+    - repoURL: ghcr.io/nginx/charts
       chart: nginx-gateway-fabric
       targetRevision: 2.4.2
       helm:

@@ -1,7 +1,0 @@
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-
-# NGINX Gateway Fabric README에서 사용하던 Gateway API standard CRD를 GitOps로 고정합니다.
-# version drift를 막기 위해 upstream ref를 명시적으로 pinning 합니다.
-resources:
-  - https://github.com/nginx/nginx-gateway-fabric/config/crd/gateway-api/standard?ref=v2.4.2

@@ -22,11 +22,13 @@ metadata:
 spec:
   project: default
 
-  # Kustomize 소스 설정
+  # Gateway API CRD를 Helm chart로 직접 설치합니다.
   source:
-    repoURL: https://github.com/PinHouse/PinHouse_CLOUD
-    targetRevision: main
-    path: k8s-kustomize/platform/gateway-api/standard
+    repoURL: https://gateway-api.github.io/gateway-api
+    chart: gateway-api
+    targetRevision: v1.2.1
+    helm:
+      releaseName: gateway-api
 
   # CRD는 cluster-scoped 리소스라 argocd 네임스페이스로 보냅니다.
   destination:
@@ -40,3 +42,4 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - ServerSideApply=true

@@ -24,9 +24,9 @@ spec:
 
   # 외부 Helm chart와 Git 저장소 values 파일을 함께 사용합니다.
   sources:
-    - repoURL: oci://quay.io/jetstack/charts
+    - repoURL: https://charts.jetstack.io
       chart: cert-manager
-      targetRevision: v1.19.2
+      targetRevision: v1.16.2
       helm:
         releaseName: cert-manager
         valueFiles:
