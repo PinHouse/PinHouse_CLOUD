@@ -5,6 +5,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 
+# 기본 정보
 metadata:
   name: platform-gateway-api-prod
   namespace: argocd
@@ -12,22 +13,27 @@ metadata:
     pinhouse.co.kr/environment: prod
     pinhouse.co.kr/component: platform
   annotations:
+    # GatewayClass, Gateway, HTTPRoute보다 먼저 CRD를 설치해야 합니다.
     argocd.argoproj.io/sync-wave: "0"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 
+# 스펙
 spec:
   project: default
 
+  # Kustomize 소스 설정
   source:
     repoURL: https://github.com/PinHouse/PinHouse_CLOUD
     targetRevision: main
     path: k8s-kustomize/platform/gateway-api/standard
 
+  # CRD는 cluster-scoped 리소스라 argocd 네임스페이스로 보냅니다.
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
 
+  # 동기화 정책
   syncPolicy:
     automated:
       prune: true
