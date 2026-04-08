@@ -180,7 +180,7 @@ externalSecrets:
           name: monitoring-secret-kv
           creationPolicy: Owner
           deletionPolicy: Retain
-        data:
+        dataFrom:
           - find:
               name:
                 regexp: "^Prod_MONITORING_"

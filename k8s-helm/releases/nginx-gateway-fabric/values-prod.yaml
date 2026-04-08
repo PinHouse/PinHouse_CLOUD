@@ -1,5 +1,8 @@
 fullnameOverride: ngf-nginx-gateway-fabric
 
+# ReplicaSet history 제한
+revisionHistoryLimit: 2
+
 # GatewayClass 설정
 nginxGateway:
   gatewayClassName: nginx
