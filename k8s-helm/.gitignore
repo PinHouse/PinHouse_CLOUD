@@ -19,6 +19,13 @@ releases/argocd/values-*.yaml
 !releases/argocd/*.yaml.example
 
 # ========================================
+# Monitoring 로컬 오버라이드
+# ========================================
+releases/monitoring-*/values-*.yaml
+releases/monitoring-*/README.md
+!releases/monitoring-*/values-prod-gitops.yaml
+
+# ========================================
 # 로컬 오버라이드 파일
 # ========================================
 *.local.yaml
@@ -32,4 +39,4 @@ releases/argocd/values-*.yaml
 releases/*/README.md
 
 # Helm dependency artifacts
-releases/monitoring/charts/
+releases/monitoring-*/charts/
