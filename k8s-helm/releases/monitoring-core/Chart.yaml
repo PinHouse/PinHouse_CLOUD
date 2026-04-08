@@ -1,0 +1,20 @@
+apiVersion: v2
+name: pinhouse-monitoring-core
+
+# 설명
+description: PinHouse Monitoring Core Helm Chart (kube-prometheus-stack)
+
+# 타입
+type: application
+
+# 헬름차트 버전
+version: 0.1.0
+
+# 애플리케이션 버전
+appVersion: "1.0.0"
+
+# 의존 차트
+dependencies:
+  - name: kube-prometheus-stack
+    version: 82.13.1
+    repository: https://prometheus-community.github.io/helm-charts

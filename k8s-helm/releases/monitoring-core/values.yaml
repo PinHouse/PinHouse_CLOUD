@@ -1,0 +1,75 @@
+# ========================================
+# Monitoring Core 공통 값
+# ========================================
+
+kube-prometheus-stack:
+  crds:
+    enabled: true
+
+  # kubeadm 기반 self-managed 클러스터에서는 컨트롤 플레인 정적 Pod 메트릭 엔드포인트가
+  # 외부에서 바로 접근되지 않는 경우가 많아서 기본값은 비활성화합니다.
+  kubeEtcd:
+    enabled: false
+
+  kubeControllerManager:
+    enabled: false
+
+  kubeScheduler:
+    enabled: false
+
+  kubeProxy:
+    enabled: false
+
+  alertmanager:
+    enabled: true
+
+  grafana:
+    enabled: true
+
+    # 운영 전에는 ExternalSecret 기반 existingSecret으로 전환하는 것을 권장합니다.
+    adminPassword: "change-me-before-apply"
+
+    service:
+      type: ClusterIP
+
+    persistence:
+      enabled: false
+      type: sts
+      size: 10Gi
+
+    additionalDataSources:
+      - name: Loki
+        uid: loki
+        type: loki
+        access: proxy
+        url: http://monitoring-loki-gateway.monitoring.svc.cluster.local
+        isDefault: false
+        jsonData:
+          maxLines: 1000
+      - name: Tempo
+        uid: tempo
+        type: tempo
+        access: proxy
+        url: http://monitoring-tempo-query-frontend.monitoring.svc.cluster.local:3100
+        isDefault: false
+
+  prometheus:
+    prometheusSpec:
+      retention: 15d
+      retentionSize: 40GB
+      walCompression: true
+
+      # 모니터링 전용 Helm release 외부에서 생성한 ServiceMonitor/PodMonitor도 수집합니다.
+      serviceMonitorSelectorNilUsesHelmValues: false
+      serviceMonitorSelector: {}
+      serviceMonitorNamespaceSelector: {}
+
+      podMonitorSelectorNilUsesHelmValues: false
+      podMonitorSelector: {}
+      podMonitorNamespaceSelector: {}
+
+      probeSelectorNilUsesHelmValues: false
+      probeSelector: {}
+      probeNamespaceSelector: {}
+
+      storageSpec: {}

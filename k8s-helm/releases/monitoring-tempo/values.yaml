@@ -1,0 +1,53 @@
+# ========================================
+# Monitoring Tempo 공통 값
+# ========================================
+
+tempo:
+  fullnameOverride: monitoring-tempo
+
+  reportingEnabled: false
+
+  traces:
+    otlp:
+      http:
+        enabled: true
+      grpc:
+        enabled: true
+
+  storage:
+    trace:
+      backend: gcs
+      gcs:
+        bucket_name: "replace-me-tempo-bucket"
+
+  ingester:
+    replicas: 1
+
+    config:
+      replication_factor: 1
+
+    persistence:
+      enabled: true
+      size: 10Gi
+
+  distributor:
+    replicas: 1
+
+  compactor:
+    replicas: 1
+
+  querier:
+    replicas: 1
+
+  queryFrontend:
+    replicas: 1
+
+  metricsGenerator:
+    enabled: false
+
+  gateway:
+    enabled: false
+
+  metaMonitoring:
+    serviceMonitor:
+      enabled: true

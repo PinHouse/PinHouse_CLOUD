@@ -1,0 +1,129 @@
+# ========================================
+# Monitoring Alloy 공통 값
+# ========================================
+
+global:
+  # Alloy 공통 라벨에 사용할 클러스터 식별자입니다.
+  clusterName: "pinhouse-cluster"
+
+  # 운영 구분용 환경명입니다.
+  environment: "shared"
+
+alloy:
+  fullnameOverride: monitoring-alloy
+
+  alloy:
+    enableReporting: false
+    extraPorts:
+      - name: otlp-grpc
+        port: 4317
+        targetPort: 4317
+        protocol: TCP
+        appProtocol: grpc
+      - name: otlp-http
+        port: 4318
+        targetPort: 4318
+        protocol: TCP
+        appProtocol: http
+
+    configMap:
+      content: |-
+        otelcol.receiver.otlp "traces" {
+          grpc {}
+          http {}
+
+          output {
+            traces = [otelcol.processor.batch.traces.input]
+          }
+        }
+
+        otelcol.processor.batch "traces" {
+          output {
+            traces = [otelcol.exporter.otlp.tempo.input]
+          }
+        }
+
+        otelcol.exporter.otlp "tempo" {
+          client {
+            endpoint = "monitoring-tempo-distributor.monitoring.svc.cluster.local:4317"
+
+            tls {
+              insecure = true
+            }
+          }
+        }
+
+        discovery.kubernetes "pods_on_same_node" {
+          role = "pod"
+
+          selectors {
+            role  = "pod"
+            field = "spec.nodeName=" + coalesce(sys.env("HOSTNAME"), constants.hostname)
+          }
+        }
+
+        loki.relabel "pod_logs" {
+          forward_to = [loki.process.pod_logs.receiver]
+
+          rule {
+            source_labels = ["__meta_kubernetes_namespace"]
+            target_label  = "namespace"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_name"]
+            target_label  = "pod"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_container_name"]
+            target_label  = "container"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_pod_node_name"]
+            target_label  = "node"
+          }
+
+          rule {
+            source_labels = ["__meta_kubernetes_namespace", "__meta_kubernetes_pod_container_name"]
+            separator     = "/"
+            target_label  = "job"
+          }
+        }
+
+        loki.process "pod_logs" {
+          forward_to = [loki.write.default.receiver]
+
+          stage.cri {}
+        }
+
+        loki.source.kubernetes "pods" {
+          targets    = discovery.kubernetes.pods_on_same_node.targets
+          forward_to = [loki.relabel.pod_logs.receiver]
+        }
+
+        loki.write "default" {
+          external_labels = {
+            cluster     = "{{ .Values.global.clusterName }}"
+            environment = "{{ .Values.global.environment }}"
+          }
+
+          endpoint {
+            url = "http://monitoring-loki-gateway.monitoring.svc.cluster.local/loki/api/v1/push"
+          }
+        }
+
+  controller:
+    type: daemonset
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  serviceMonitor:
+    enabled: true

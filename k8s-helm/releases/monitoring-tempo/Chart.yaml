@@ -1,0 +1,21 @@
+apiVersion: v2
+name: pinhouse-monitoring-tempo
+
+# 설명
+description: PinHouse Monitoring Tempo Helm Chart
+
+# 타입
+type: application
+
+# 헬름차트 버전
+version: 0.1.0
+
+# 애플리케이션 버전
+appVersion: "1.0.0"
+
+# 의존 차트
+dependencies:
+  - name: tempo-distributed
+    alias: tempo
+    version: 1.61.2
+    repository: https://grafana.github.io/helm-charts
