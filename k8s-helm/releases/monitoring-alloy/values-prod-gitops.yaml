@@ -1,0 +1,22 @@
+# ========================================
+# Prod Monitoring Alloy GitOps 값
+# ========================================
+
+# 애플리케이션 OTLP 엔드포인트 예시
+# gRPC: monitoring-alloy.monitoring.svc.cluster.local:4317
+# HTTP: http://monitoring-alloy.monitoring.svc.cluster.local:4318/v1/traces
+
+global:
+  # Alloy가 Loki로 보내는 로그 라벨과 공통 식별값에 사용합니다.
+  clusterName: "pinhouse-prod"
+  environment: "prod"
+
+alloy:
+  # 로그/트레이스/메트릭까지 함께 수집하므로 기본값보다 조금 더 여유를 둡니다.
+  resources:
+    requests:
+      cpu: 300m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi

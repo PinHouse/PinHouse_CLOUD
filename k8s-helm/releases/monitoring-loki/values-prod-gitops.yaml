@@ -1,0 +1,43 @@
+# ========================================
+# Prod Monitoring Loki GitOps 값
+# ========================================
+
+loki:
+  # Loki 공용 ServiceAccount 이름을 고정해 두면 추후 인증 방식 전환 시 추적이 쉽습니다.
+  serviceAccount:
+    create: true
+    name: monitoring-loki-sa
+    annotations: {}
+
+  loki:
+    # 로그 보관 기간은 14일로 시작합니다.
+    limits_config:
+      retention_period: 336h
+
+    # Loki 로그 청크와 인덱스는 GCS 버킷에 저장합니다.
+    storage:
+      bucketNames:
+        chunks: "pinhouse-prod-loki"
+        ruler: "pinhouse-prod-loki"
+        admin: "pinhouse-prod-loki"
+      gcs:
+        bucket_name: "pinhouse-prod-loki"
+
+  singleBinary:
+    # 초기 운영 단계는 복잡도를 낮추기 위해 SingleBinary 모드로 유지합니다.
+    replicas: 1
+
+    # 로컬 디스크는 캐시와 임시 데이터를 위해 사용합니다.
+    persistence:
+      enabled: true
+      size: 30Gi
+      storageClass: "gce-standard-rwo"
+
+    # 로그 유입량이 갑자기 늘어도 버틸 수 있도록 여유 있게 잡은 값입니다.
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 2000m
+        memory: 2Gi
