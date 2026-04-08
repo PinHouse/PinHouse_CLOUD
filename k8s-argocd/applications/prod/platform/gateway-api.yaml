@@ -22,13 +22,11 @@ metadata:
 spec:
   project: default
 
-  # Gateway API CRD를 Helm chart로 직접 설치합니다.
+  # Gateway API CRD를 GitHub에서 직접 가져옵니다.
   source:
-    repoURL: https://gateway-api.github.io/gateway-api
-    chart: gateway-api
+    repoURL: https://github.com/kubernetes-sigs/gateway-api
     targetRevision: v1.2.1
-    helm:
-      releaseName: gateway-api
+    path: config/crd/standard
 
   # CRD는 cluster-scoped 리소스라 argocd 네임스페이스로 보냅니다.
   destination:
