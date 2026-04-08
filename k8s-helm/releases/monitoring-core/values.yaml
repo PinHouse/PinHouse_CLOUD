@@ -58,18 +58,27 @@ kube-prometheus-stack:
       retention: 15d
       retentionSize: 40GB
       walCompression: true
+      # Prometheus는 Alloy가 전달한 메트릭을 저장/조회하는 역할로 사용합니다.
+      enableRemoteWriteReceiver: true
 
-      # 모니터링 전용 Helm release 외부에서 생성한 ServiceMonitor/PodMonitor도 수집합니다.
+      # 직접 scrape는 사용하지 않고 Alloy가 ServiceMonitor/PodMonitor/Probe를 scrape합니다.
+      # 아래 selector는 의도적으로 아무것도 매칭하지 않도록 둡니다.
       serviceMonitorSelectorNilUsesHelmValues: false
-      serviceMonitorSelector: {}
+      serviceMonitorSelector:
+        matchLabels:
+          "pinhouse.co.kr/scrape-via": "prometheus"
       serviceMonitorNamespaceSelector: {}
 
       podMonitorSelectorNilUsesHelmValues: false
-      podMonitorSelector: {}
+      podMonitorSelector:
+        matchLabels:
+          "pinhouse.co.kr/scrape-via": "prometheus"
       podMonitorNamespaceSelector: {}
 
       probeSelectorNilUsesHelmValues: false
-      probeSelector: {}
+      probeSelector:
+        matchLabels:
+          "pinhouse.co.kr/scrape-via": "prometheus"
       probeNamespaceSelector: {}
 
       storageSpec: {}

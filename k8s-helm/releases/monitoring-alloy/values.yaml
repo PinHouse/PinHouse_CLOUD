@@ -13,6 +13,10 @@ alloy:
   fullnameOverride: monitoring-alloy
 
   alloy:
+    # DaemonSet 여러 인스턴스 간에 scrape 대상을 나눠 가져가도록 클러스터링을 활성화합니다.
+    clustering:
+      enabled: true
+
     enableReporting: false
     extraPorts:
       - name: otlp-grpc
@@ -50,6 +54,56 @@ alloy:
             tls {
               insecure = true
             }
+          }
+        }
+
+        prometheus.remote_write "prometheus" {
+          external_labels = {
+            cluster     = "{{ .Values.global.clusterName }}"
+            environment = "{{ .Values.global.environment }}"
+          }
+
+          endpoint {
+            url = "http://monitoring-core-kube-prome-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
+          }
+        }
+
+        prometheus.operator.servicemonitors "cluster" {
+          forward_to = [prometheus.remote_write.prometheus.receiver]
+
+          clustering {
+            enabled = true
+          }
+
+          scrape {
+            default_scrape_interval = "30s"
+            default_scrape_timeout  = "10s"
+          }
+        }
+
+        prometheus.operator.podmonitors "cluster" {
+          forward_to = [prometheus.remote_write.prometheus.receiver]
+
+          clustering {
+            enabled = true
+          }
+
+          scrape {
+            default_scrape_interval = "30s"
+            default_scrape_timeout  = "10s"
+          }
+        }
+
+        prometheus.operator.probes "cluster" {
+          forward_to = [prometheus.remote_write.prometheus.receiver]
+
+          clustering {
+            enabled = true
+          }
+
+          scrape {
+            default_scrape_interval = "30s"
+            default_scrape_timeout  = "10s"
           }
         }
 
