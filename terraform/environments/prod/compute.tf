@@ -17,7 +17,6 @@ module "k8s_master_nodes" {
 
   # 마스터 노드는 단일 인스턴스로 고정 운영합니다.
   enable_autoscaling = false
-  update_policy_type = "OPPORTUNISTIC"
 
   # 공통 인스턴스 설정
   machine_type       = var.k8s_master_machine_type
@@ -68,7 +67,6 @@ module "k8s_worker_nodes" {
   autoscaling_min_replicas = var.autoscaling_min_replicas
   autoscaling_max_replicas = var.autoscaling_max_replicas
   autoscaling_cpu_target   = 0.7
-  update_policy_type       = "OPPORTUNISTIC"
 
   # 공통 인스턴스 설정
   machine_type       = var.k8s_worker_machine_type
