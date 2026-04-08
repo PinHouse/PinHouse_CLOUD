@@ -48,6 +48,10 @@ tempo:
   compactor:
     # 저장된 블록을 정리하는 작업이 있으므로 메모리를 조금 더 줍니다.
     replicas: 1
+    # Compactor retention 정책: 14일이 지난 블록은 자동 삭제
+    config:
+      compaction:
+        block_retention: 336h  # 14일 (Loki와 동일한 보관 기간)
     resources:
       requests:
         cpu: 200m
