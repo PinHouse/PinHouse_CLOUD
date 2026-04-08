@@ -17,6 +17,7 @@ module "k8s_master_nodes" {
 
   # 마스터 노드는 단일 인스턴스로 고정 운영합니다.
   enable_autoscaling = false
+  update_policy_type = "OPPORTUNISTIC"
 
   # 공통 인스턴스 설정
   machine_type       = var.k8s_master_machine_type
@@ -62,11 +63,12 @@ module "k8s_worker_nodes" {
   instance_group_zone        = "${var.region}-a"
   instance_group_target_size = var.k8s_worker_instance_group_size
 
-  # 워커 노드는 비용 절감을 우선하되 필요 시에만 오토스케일링합니다.
-  enable_autoscaling       = var.enable_autoscaling
+  # target_size가 0이면 워커 MIG를 완전히 비워둘 수 있도록 오토스케일러를 비활성화합니다.
+  enable_autoscaling       = var.k8s_worker_instance_group_size > 0 ? var.enable_autoscaling : false
   autoscaling_min_replicas = var.autoscaling_min_replicas
   autoscaling_max_replicas = var.autoscaling_max_replicas
   autoscaling_cpu_target   = 0.7
+  update_policy_type       = "OPPORTUNISTIC"
 
   # 공통 인스턴스 설정
   machine_type       = var.k8s_worker_machine_type
