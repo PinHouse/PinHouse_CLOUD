@@ -1,0 +1,51 @@
+# ===================================
+# Prod Monitoring Loki
+# ===================================
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+
+# 기본 정보
+metadata:
+  name: monitoring-loki-prod
+  namespace: argocd
+
+  # 라벨 추가
+  labels:
+    pinhouse.co.kr/environment: prod
+    pinhouse.co.kr/component: monitoring
+    pinhouse.co.kr/monitoring-component: loki
+
+  # 어노테이션 메타데이터
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+
+  # Finalizers를 설정하면 Application 삭제 시 관련 리소스도 함께 삭제됨
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+
+spec:
+  project: default
+
+  # Helm 소스 설정
+  source:
+    repoURL: https://github.com/PinHouse/PinHouse_CLOUD
+    targetRevision: main
+    path: k8s-helm/releases/monitoring-loki
+    helm:
+      releaseName: monitoring-loki
+      valueFiles:
+        - values-prod-gitops.yaml
+
+  # 배포 대상 클러스터
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+
+  # 동기화 정책
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
