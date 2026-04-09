@@ -23,13 +23,14 @@ kube-prometheus-stack:
   alertmanager:
     enabled: true
     alertmanagerSpec:
-      resources:
-        requests:
-          cpu: 50m
-          memory: 64Mi
-        limits:
-          cpu: 200m
-          memory: 128Mi
+      # 리소스 요청/제한은 임시로 주석 처리하고 차트 기본값을 사용합니다.
+      # resources:
+      #   requests:
+      #     cpu: 50m
+      #     memory: 64Mi
+      #   limits:
+      #     cpu: 200m
+      #     memory: 128Mi
 
   grafana:
     enabled: true
@@ -37,13 +38,14 @@ kube-prometheus-stack:
     # 운영 전에는 ExternalSecret 기반 existingSecret으로 전환하는 것을 권장합니다.
     adminPassword: "change-me-before-apply"
 
-    resources:
-      requests:
-        cpu: 100m
-        memory: 128Mi
-      limits:
-        cpu: 300m
-        memory: 256Mi
+    # 리소스 요청/제한은 임시로 주석 처리하고 차트 기본값을 사용합니다.
+    # resources:
+    #   requests:
+    #     cpu: 100m
+    #     memory: 128Mi
+    #   limits:
+    #     cpu: 300m
+    #     memory: 256Mi
 
     service:
       type: ClusterIP
@@ -77,14 +79,14 @@ kube-prometheus-stack:
       # Prometheus는 Alloy가 전달한 메트릭을 저장/조회하는 역할로 사용합니다.
       enableRemoteWriteReceiver: true
 
-      # 초기 환경 기준 리소스 설정 (운영 환경에서는 values-prod-gitops.yaml에서 override)
-      resources:
-        requests:
-          cpu: 200m
-          memory: 512Mi
-        limits:
-          cpu: 1000m
-          memory: 2Gi
+      # 초기 환경 기준 리소스 설정은 임시로 주석 처리하고 차트 기본값을 사용합니다.
+      # resources:
+      #   requests:
+      #     cpu: 200m
+      #     memory: 512Mi
+      #   limits:
+      #     cpu: 1000m
+      #     memory: 2Gi
 
       # 직접 scrape는 사용하지 않고 Alloy가 ServiceMonitor/PodMonitor/Probe를 scrape합니다.
       # 아래 selector는 의도적으로 아무것도 매칭하지 않도록 둡니다.
@@ -109,28 +111,31 @@ kube-prometheus-stack:
       storageSpec: {}
 
   prometheusOperator:
-    resources:
-      requests:
-        cpu: 50m
-        memory: 64Mi
-      limits:
-        cpu: 200m
-        memory: 128Mi
+    # 리소스 요청/제한은 임시로 주석 처리하고 차트 기본값을 사용합니다.
+    # resources:
+    #   requests:
+    #     cpu: 50m
+    #     memory: 64Mi
+    #   limits:
+    #     cpu: 200m
+    #     memory: 128Mi
 
   kube-state-metrics:
-    resources:
-      requests:
-        cpu: 50m
-        memory: 128Mi
-      limits:
-        cpu: 200m
-        memory: 256Mi
+    # 리소스 요청/제한은 임시로 주석 처리하고 차트 기본값을 사용합니다.
+    # resources:
+    #   requests:
+    #     cpu: 50m
+    #     memory: 128Mi
+    #   limits:
+    #     cpu: 200m
+    #     memory: 256Mi
 
   prometheus-node-exporter:
-    resources:
-      requests:
-        cpu: 50m
-        memory: 32Mi
-      limits:
-        cpu: 100m
-        memory: 64Mi
+    # 리소스 요청/제한은 임시로 주석 처리하고 차트 기본값을 사용합니다.
+    # resources:
+    #   requests:
+    #     cpu: 50m
+    #     memory: 32Mi
+    #   limits:
+    #     cpu: 100m
+    #     memory: 64Mi
