@@ -24,9 +24,9 @@ spec:
 
   # Kustomize 소스 설정
   source:
-    repoURL: https://github.com/kubernetes-sigs/gcp-compute-persistent-disk-csi-driver
-    targetRevision: master
-    path: deploy/kubernetes/overlays/stable-master
+    repoURL: https://github.com/PinHouse/PinHouse_CLOUD
+    targetRevision: main
+    path: k8s-kustomize/platform/gce-pd-csi-driver
 
   # CSI Driver는 gce-pd-csi-driver 네임스페이스에 배포됩니다.
   destination:
