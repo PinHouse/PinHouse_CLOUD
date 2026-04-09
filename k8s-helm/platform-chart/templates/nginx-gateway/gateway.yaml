@@ -66,4 +66,20 @@ spec:
           from: All
     {{- end }}
 
+    {{- if .Values.gateway.listeners.grafana.enabled }}
+    # Grafana 모니터링
+    - name: grafana-https
+      port: 443
+      protocol: HTTPS
+      hostname: {{ .Values.gateway.listeners.grafana.domain }}
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: {{ .Values.gateway.listeners.grafana.tlsSecretName }}
+            namespace: {{ .Values.gateway.namespace }}
+      allowedRoutes:
+        namespaces:
+          from: All
+    {{- end }}
+
 {{- end }}

@@ -46,12 +46,19 @@ gateway:
         - name: api
           hostname: api.pinhouse.co.kr
 
-  # Argo CD 리스너
+  # 추가 리스너
   listeners:
+    # Argo CD
     argo:
       enabled: true
       domain: argo.pinhouse.co.kr
       tlsSecretName: pinhouse-tls-argo
+
+    # Grafana 모니터링
+    grafana:
+      enabled: true
+      domain: grafana.pinhouse.co.kr
+      tlsSecretName: pinhouse-tls-grafana
 
 # 접근 제어 (Access Control) - 보안 강화 버전
 accessControl:
@@ -123,11 +130,18 @@ certificates:
         - api.pinhouse.co.kr
       enabled: true
 
-    # 🔒 실제 도메인으로 변경
+    # Argo CD
     - name: pinhouse-tls-argo
       namespace: nginx-gateway
       dnsNames:
         - argo.pinhouse.co.kr
+      enabled: true
+
+    # Grafana 모니터링
+    - name: pinhouse-tls-grafana
+      namespace: nginx-gateway
+      dnsNames:
+        - grafana.pinhouse.co.kr
       enabled: true
 
 # GCP Secret Manager 기반 시크릿 적용

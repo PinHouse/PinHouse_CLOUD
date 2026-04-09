@@ -1,0 +1,42 @@
+# ===================================
+# Prod Platform Monitoring HTTPRoute
+# ===================================
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+
+# 기본 정보
+metadata:
+  name: platform-monitoring-httproute-prod
+  namespace: argocd
+  labels:
+    pinhouse.co.kr/environment: prod
+    pinhouse.co.kr/component: platform
+  annotations:
+    # Gateway와 인증서가 준비된 뒤 HTTPRoute를 연결합니다.
+    argocd.argoproj.io/sync-wave: "3"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+
+# 스펙
+spec:
+  project: default
+
+  # Grafana HTTPRoute 설정
+  source:
+    repoURL: https://github.com/PinHouse/PinHouse_CLOUD
+    targetRevision: main
+    path: k8s-kustomize/platform/monitoring
+
+  # 배포 대상 클러스터
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+
+  # 동기화 정책
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
