@@ -1,0 +1,10 @@
+# ========================================
+# JSON Patch - taint-controller의 cloud-sa 설정 제거
+# ========================================
+# noauth 방식에서는 VM 메타데이터 서버를 통해 인증하므로
+# GOOGLE_APPLICATION_CREDENTIALS와 cloud-sa-volume이 불필요
+
+- op: remove
+  path: /spec/template/spec/containers/5/env
+- op: remove
+  path: /spec/template/spec/containers/5/volumeMounts

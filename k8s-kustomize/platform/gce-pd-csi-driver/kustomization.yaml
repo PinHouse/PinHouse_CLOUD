@@ -9,3 +9,10 @@ kind: Kustomization
 # noauth는 GCE VM의 메타데이터 서버를 통해 인증하므로 cloud-sa Secret이 불필요합니다.
 resources:
   - https://github.com/kubernetes-sigs/gcp-compute-persistent-disk-csi-driver/deploy/kubernetes/overlays/noauth
+
+# taint-controller 컨테이너의 cloud-sa 설정 제거 (noauth 방식)
+patches:
+  - target:
+      kind: Deployment
+      name: csi-gce-pd-controller
+    path: remove-cloud-sa.yaml
