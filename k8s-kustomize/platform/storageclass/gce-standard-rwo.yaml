@@ -7,15 +7,14 @@ metadata:
     # 기본 StorageClass로 자동 선택되지 않도록 false로 둡니다.
     storageclass.kubernetes.io/is-default-class: "false"
 
-provisioner: kubernetes.io/gce-pd
+# GCE Persistent Disk CSI Driver를 사용합니다.
+provisioner: pd.csi.storage.gke.io
 
 parameters:
   # 표준 영구 디스크를 사용합니다.
   type: pd-standard
   # 파티션 포맷은 ext4를 사용합니다.
   fstype: ext4
-  # 영역 PD가 프로비전
-  replication-type: none
 
 # Pod 하나가 하나의 디스크를 마운트하는 기본 운영 모델입니다.
 volumeBindingMode: WaitForFirstConsumer
