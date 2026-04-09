@@ -60,7 +60,7 @@ alloy:
         prometheus.remote_write "prometheus" {
           external_labels = {
             cluster     = "{{ .Values.global.clusterName }}",
-            environment = "{{ .Values.global.environment }}"
+            environment = "{{ .Values.global.environment }}",
           }
 
           endpoint {
@@ -160,7 +160,7 @@ alloy:
         loki.write "default" {
           external_labels = {
             cluster     = "{{ .Values.global.clusterName }}",
-            environment = "{{ .Values.global.environment }}"
+            environment = "{{ .Values.global.environment }}",
           }
 
           endpoint {
