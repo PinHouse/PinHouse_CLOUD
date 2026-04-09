@@ -144,15 +144,6 @@ certificates:
         - grafana.pinhouse.co.kr
       enabled: true
 
-# 모니터링 (Grafana HTTPRoute)
-monitoring:
-  namespace: monitoring
-  grafana:
-    enabled: true
-    domain: grafana.pinhouse.co.kr
-    serviceName: pinhouse-monitoring-core-grafana
-    servicePort: 80
-
 # GCP Secret Manager 기반 시크릿 적용
 externalSecrets:
   enabled: true
