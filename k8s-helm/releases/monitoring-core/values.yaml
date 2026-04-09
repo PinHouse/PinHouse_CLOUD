@@ -22,15 +22,8 @@ kube-prometheus-stack:
 
   alertmanager:
     enabled: true
-    alertmanagerSpec:
-      # 리소스 요청/제한은 임시로 주석 처리하고 차트 기본값을 사용합니다.
-      # resources:
-      #   requests:
-      #     cpu: 50m
-      #     memory: 64Mi
-      #   limits:
-      #     cpu: 200m
-      #     memory: 128Mi
+    # 비어 있는 map을 유지해 차트 기본값과 타입 충돌이 나지 않도록 합니다.
+    alertmanagerSpec: {}
 
   grafana:
     enabled: true
@@ -111,31 +104,13 @@ kube-prometheus-stack:
       storageSpec: {}
 
   prometheusOperator:
-    # 리소스 요청/제한은 임시로 주석 처리하고 차트 기본값을 사용합니다.
-    # resources:
-    #   requests:
-    #     cpu: 50m
-    #     memory: 64Mi
-    #   limits:
-    #     cpu: 200m
-    #     memory: 128Mi
+    # 비어 있는 map을 유지해 차트 기본값을 그대로 사용합니다.
+    resources: {}
 
   kube-state-metrics:
-    # 리소스 요청/제한은 임시로 주석 처리하고 차트 기본값을 사용합니다.
-    # resources:
-    #   requests:
-    #     cpu: 50m
-    #     memory: 128Mi
-    #   limits:
-    #     cpu: 200m
-    #     memory: 256Mi
+    # 비어 있는 map을 유지해 차트 기본값을 그대로 사용합니다.
+    resources: {}
 
   prometheus-node-exporter:
-    # 리소스 요청/제한은 임시로 주석 처리하고 차트 기본값을 사용합니다.
-    # resources:
-    #   requests:
-    #     cpu: 50m
-    #     memory: 32Mi
-    #   limits:
-    #     cpu: 100m
-    #     memory: 64Mi
+    # 비어 있는 map을 유지해 차트 기본값을 그대로 사용합니다.
+    resources: {}
