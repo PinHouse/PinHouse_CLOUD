@@ -1,5 +1,6 @@
 # ReplicaSet history 제한
-revisionHistoryLimit: 2
+global:
+  revisionHistoryLimit: 2
 
 config:
   enableGatewayAPI: true
