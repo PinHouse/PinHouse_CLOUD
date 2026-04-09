@@ -23,5 +23,5 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: pinhouse-monitoring-core-grafana
+        - name: monitoring-core-grafana
           port: 80

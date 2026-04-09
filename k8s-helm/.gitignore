@@ -6,6 +6,7 @@ platform-chart/**/README.md
 !platform-chart/**/values.yaml
 !platform-chart/**/values-nonprod.yaml
 !platform-chart/**/values-prod.yaml
+!platform-chart/templates/**/*.yaml
 
 # ========================================
 # 로컬 시크릿 매니페스트

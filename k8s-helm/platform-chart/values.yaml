@@ -68,9 +68,14 @@ gateway:
   # 특수 리스너 (ArgoCD 등)
   listeners:
     argo:
-      enabled: true
+      enabled: false
       domain: nonprod.argo.your-domain.com  # 🔒 실제 도메인으로 변경
       tlsSecretName: your-tls-argo
+
+    grafana:
+      enabled: false
+      domain: grafana.your-domain.com  # 🔒 실제 도메인으로 변경
+      tlsSecretName: your-tls-grafana
 
 # 접근 제어 (Access Control)
 accessControl:

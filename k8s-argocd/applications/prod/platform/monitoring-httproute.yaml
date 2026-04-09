@@ -26,7 +26,7 @@ spec:
   source:
     repoURL: https://github.com/PinHouse/PinHouse_CLOUD
     targetRevision: main
-    path: k8s-kustomize/platform/monitoring
+    path: k8s-kustomize/platform/monitoring/overlays/prod
 
   # 배포 대상 클러스터
   destination:
