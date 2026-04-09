@@ -24,14 +24,14 @@ spec:
 
   # Kustomize 소스 설정
   source:
-    repoURL: https://github.com/PinHouse/PinHouse_CLOUD
-    targetRevision: main
-    path: k8s-kustomize/platform/gce-pd-csi-driver
+    repoURL: https://github.com/kubernetes-sigs/gcp-compute-persistent-disk-csi-driver
+    targetRevision: master
+    path: deploy/kubernetes/overlays/stable-master
 
-  # CSI Driver는 cluster-scoped 리소스도 포함하므로 argocd 네임스페이스로 보냅니다.
+  # CSI Driver는 gce-pd-csi-driver 네임스페이스에 배포됩니다.
   destination:
     server: https://kubernetes.default.svc
-    namespace: argocd
+    namespace: gce-pd-csi-driver
 
   # 동기화 정책
   syncPolicy:
