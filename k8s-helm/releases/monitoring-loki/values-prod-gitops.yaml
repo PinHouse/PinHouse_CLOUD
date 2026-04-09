@@ -43,8 +43,8 @@ loki:
         memory: 1Gi
 
   chunksCache:
-    # 차트 값은 MB 단위를 사용하므로 256Mi 수준으로 낮춥니다.
-    allocatedMemory: 256
+    # 현재 클러스터 규모에서는 chunks cache를 유지할 이점보다 스케줄 비용이 더 큽니다.
+    enabled: false
 
   resultsCache:
     # 조회 캐시도 동일하게 256Mi 수준으로 낮춥니다.
