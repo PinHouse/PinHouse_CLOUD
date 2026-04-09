@@ -1,0 +1,11 @@
+# ========================================
+# GCE Persistent Disk CSI Driver (noauth)
+# ========================================
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# 공식 저장소의 noauth overlay를 사용합니다.
+# noauth는 GCE VM의 메타데이터 서버를 통해 인증하므로 cloud-sa Secret이 불필요합니다.
+resources:
+  - https://github.com/kubernetes-sigs/gcp-compute-persistent-disk-csi-driver/deploy/kubernetes/overlays/noauth
