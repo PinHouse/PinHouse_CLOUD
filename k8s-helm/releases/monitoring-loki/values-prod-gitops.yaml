@@ -37,7 +37,15 @@ loki:
     resources:
       requests:
         cpu: 500m
-        memory: 1Gi
+        memory: 512Mi
       limits:
         cpu: 2000m
-        memory: 2Gi
+        memory: 1Gi
+
+  chunksCache:
+    # 차트 값은 MB 단위를 사용하므로 256Mi 수준으로 낮춥니다.
+    allocatedMemory: 256
+
+  resultsCache:
+    # 조회 캐시도 동일하게 256Mi 수준으로 낮춥니다.
+    allocatedMemory: 256
