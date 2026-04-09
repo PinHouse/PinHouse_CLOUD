@@ -13,8 +13,6 @@ provisioner: pd.csi.storage.gke.io
 parameters:
   # 표준 영구 디스크를 사용합니다.
   type: pd-standard
-  # 파티션 포맷은 ext4를 사용합니다.
-  fstype: ext4
 
 # Pod 하나가 하나의 디스크를 마운트하는 기본 운영 모델입니다.
 volumeBindingMode: WaitForFirstConsumer
