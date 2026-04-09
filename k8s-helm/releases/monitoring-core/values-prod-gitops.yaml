@@ -13,11 +13,11 @@ kube-prometheus-stack:
     # Grafana Pod 리소스는 대시보드 조회와 플러그인 초기화 여유를 고려한 값입니다.
     resources:
       requests:
-        cpu: 200m
-        memory: 256Mi
+        cpu: 150m
+        memory: 192Mi
       limits:
-        cpu: 500m
-        memory: 512Mi
+        cpu: 400m
+        memory: 384Mi
 
     # 운영 환경에서는 Grafana 대시보드와 설정을 유지하기 위해 PVC를 사용합니다.
     persistence:
@@ -38,11 +38,11 @@ kube-prometheus-stack:
       # 운영 환경에서는 요청/제한을 명시적으로 지정합니다.
       resources:
         requests:
-          cpu: 500m
-          memory: 2Gi
+          cpu: 300m
+          memory: 1Gi
         limits:
-          cpu: 2000m
-          memory: 4Gi
+          cpu: 1500m
+          memory: 2Gi
 
       # Prometheus가 직접 ServiceMonitor/PodMonitor/Probe를 scrape하지 않도록 둡니다.
       serviceMonitorSelectorNilUsesHelmValues: false
@@ -79,38 +79,38 @@ kube-prometheus-stack:
     alertmanagerSpec:
       resources:
         requests:
-          cpu: 100m
-          memory: 128Mi
+          cpu: 50m
+          memory: 96Mi
         limits:
-          cpu: 200m
-          memory: 256Mi
+          cpu: 150m
+          memory: 192Mi
 
   prometheusOperator:
     # Operator는 scrape 주체는 아니지만 Prometheus/Alertmanager 리소스를 생성하므로 계속 필요합니다.
     resources:
       requests:
-        cpu: 100m
-        memory: 128Mi
+        cpu: 50m
+        memory: 96Mi
       limits:
-        cpu: 200m
-        memory: 256Mi
+        cpu: 150m
+        memory: 192Mi
 
   kube-state-metrics:
     # Kubernetes 리소스 상태 수집용 컴포넌트입니다.
     resources:
       requests:
-        cpu: 100m
-        memory: 256Mi
+        cpu: 50m
+        memory: 192Mi
       limits:
-        cpu: 200m
-        memory: 512Mi
+        cpu: 150m
+        memory: 384Mi
 
   prometheus-node-exporter:
     # 노드 메트릭 수집기라서 가볍게 시작하되 과도한 사용을 막기 위해 제한을 둡니다.
     resources:
       requests:
-        cpu: 50m
-        memory: 64Mi
+        cpu: 30m
+        memory: 48Mi
       limits:
-        cpu: 200m
-        memory: 128Mi
+        cpu: 100m
+        memory: 96Mi
