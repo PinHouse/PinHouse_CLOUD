@@ -7,4 +7,4 @@ kind: Kustomization
 
 # GCE PD CSI Driver 공식 저장소에서 가져옵니다.
 resources:
-  - github.com/kubernetes-sigs/gcp-compute-persistent-disk-csi-driver/deploy/kubernetes/overlays/stable?ref=v1.14.0
+  - https://github.com/kubernetes-sigs/gcp-compute-persistent-disk-csi-driver/deploy/kubernetes/overlays/stable-master
