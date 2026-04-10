@@ -37,7 +37,9 @@ spec:
           # 수정될 이미지
           image: REPLACE_ME
           ports:
-            - containerPort: 8080
+            - name: http
+              containerPort: 8080
+              protocol: TCP
 
           # 파라미터 스토어에서 주입받는 내용
           envFrom:
