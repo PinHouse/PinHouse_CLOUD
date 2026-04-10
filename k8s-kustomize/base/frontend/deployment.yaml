@@ -37,4 +37,6 @@ spec:
           # 수정될 이미지
           image: REPLACE_ME
           ports:
-            - containerPort: 3000
+            - name: http
+              containerPort: 3000
+              protocol: TCP

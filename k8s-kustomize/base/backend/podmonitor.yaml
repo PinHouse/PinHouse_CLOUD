@@ -1,0 +1,23 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+
+metadata:
+  name: backend-podmonitor
+  labels:
+    pinhouse.co.kr/scrape-via: "prometheus"  # 필수: Alloy가 인식하는 라벨
+    app: backend
+
+spec:
+  selector:
+    matchLabels:
+      app: backend  # BE Deployment의 Pod 라벨과 일치
+
+  namespaceSelector:
+    matchNames:
+      - app
+
+  podMetricsEndpoints:
+    - port: http  # Deployment의 containerPort 이름
+      path: /actuator/prometheus  # Spring Boot Actuator 메트릭 경로
+      interval: 30s
+      scrapeTimeout: 10s
