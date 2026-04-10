@@ -8,7 +8,7 @@ metadata:
 # 스펙
 spec:
   # Replica 개수
-  replicas: 1
+  replicas: 2
 
   # 라벨
   template:
