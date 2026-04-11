@@ -11,6 +11,9 @@ global:
 
 alloy:
   fullnameOverride: monitoring-alloy
+  crds:
+    # PodLogs 같은 Alloy CRD를 릴리스와 함께 명시적으로 설치합니다.
+    create: true
 
   alloy:
     # DaemonSet 여러 인스턴스 간에 scrape 대상을 나눠 가져가도록 클러스터링을 활성화합니다.
