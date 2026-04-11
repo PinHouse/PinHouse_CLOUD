@@ -13,6 +13,7 @@ metadata:
     pinhouse.co.kr/environment: dev
     pinhouse.co.kr/component: platform
   annotations:
+    # StorageClass보다 먼저 CSI Driver를 설치해야 합니다.
     argocd.argoproj.io/sync-wave: "-1"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -21,15 +22,18 @@ metadata:
 spec:
   project: default
 
+  # Kustomize 소스 설정
   source:
     repoURL: https://github.com/PinHouse/PinHouse_CLOUD
     targetRevision: main
     path: k8s-kustomize/platform/gce-pd-csi-driver
 
+  # CSI Driver는 gce-pd-csi-driver 네임스페이스에 배포됩니다.
   destination:
     server: https://kubernetes.default.svc
     namespace: gce-pd-csi-driver
 
+  # 동기화 정책
   syncPolicy:
     automated:
       prune: true

@@ -19,6 +19,7 @@ metadata:
 spec:
   project: default
 
+  # Git 저장소에서 관리하는 매니페스트 경로입니다.
   source:
     repoURL: https://github.com/PinHouse/PinHouse_CLOUD
     targetRevision: main
@@ -26,10 +27,12 @@ spec:
     directory:
       recurse: false
 
+  # 배포 대상 클러스터와 네임스페이스입니다.
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
 
+  # Git 기준으로 자동 동기화합니다.
   syncPolicy:
     automated:
       prune: true

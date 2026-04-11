@@ -14,10 +14,14 @@ kube-prometheus-stack:
     sidecar:
       dashboards:
         enabled: true
+        # ConfigMap에서 찾을 라벨
         label: grafana_dashboard
         labelValue: "1"
+        # 모든 네임스페이스에서 대시보드 ConfigMap 검색
         searchNamespace: ALL
+        # 폴더 어노테이션 지원
         folderAnnotation: grafana_folder
+        # 대시보드 프로비저닝 설정
         provider:
           foldersFromFilesStructure: true
 
@@ -30,10 +34,13 @@ kube-prometheus-stack:
 
   prometheus:
     prometheusSpec:
+      # 비운영 환경 기준 메트릭 보관 기간과 최대 디스크 사용량입니다.
       retention: 15d
       retentionSize: 50GB
+      # 실제 scrape는 Alloy가 수행하고, Prometheus는 remote write receiver로 메트릭을 받습니다.
       enableRemoteWriteReceiver: true
 
+      # Prometheus가 직접 ServiceMonitor/PodMonitor/Probe를 scrape하지 않도록 둡니다.
       serviceMonitorSelectorNilUsesHelmValues: false
       serviceMonitorSelector:
         matchLabels:
@@ -52,6 +59,7 @@ kube-prometheus-stack:
           "pinhouse.co.kr/scrape-via": "prometheus"
       probeNamespaceSelector: {}
 
+      # 메트릭 보관을 위해 PVC를 사용합니다.
       storageSpec:
         volumeClaimTemplate:
           spec:
@@ -63,13 +71,21 @@ kube-prometheus-stack:
                 storage: 50Gi
 
   alertmanager:
+    # Alertmanager는 알림 라우팅 전용이라 상대적으로 작은 리소스로 시작합니다.
+    # 비어 있는 map을 유지해 차트 기본값과 타입 충돌이 나지 않도록 합니다.
     alertmanagerSpec: {}
 
   prometheusOperator:
+    # Operator는 scrape 주체는 아니지만 Prometheus/Alertmanager 리소스를 생성하므로 계속 필요합니다.
+    # 비어 있는 map을 유지해 차트 기본값을 그대로 사용합니다.
     resources: {}
 
   kube-state-metrics:
+    # Kubernetes 리소스 상태 수집용 컴포넌트입니다.
+    # 비어 있는 map을 유지해 차트 기본값을 그대로 사용합니다.
     resources: {}
 
   prometheus-node-exporter:
+    # 노드 메트릭 수집기라서 가볍게 시작하되 과도한 사용을 막기 위해 제한을 둡니다.
+    # 비어 있는 map을 유지해 차트 기본값을 그대로 사용합니다.
     resources: {}

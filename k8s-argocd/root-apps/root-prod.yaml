@@ -19,6 +19,7 @@ spec:
   project: default
 
   # GitOps 소 설정
+  # Git 저장소에서 관리하는 매니페스트 경로입니다.
   source:
     # Git 리포지토리 URL
     repoURL: https://github.com/PinHouse/PinHouse_CLOUD
@@ -32,11 +33,13 @@ spec:
       recurse: false
 
   # 배포 대상 클러스터
+  # 배포 대상 클러스터와 네임스페이스입니다.
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
 
   # 동기화 정책
+  # Git 기준으로 자동 동기화합니다.
   syncPolicy:
     # GitOps 자동 동기화 설정
     automated:

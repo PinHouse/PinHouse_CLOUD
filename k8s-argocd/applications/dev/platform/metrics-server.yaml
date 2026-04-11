@@ -13,6 +13,7 @@ metadata:
     pinhouse.co.kr/environment: dev
     pinhouse.co.kr/component: platform
   annotations:
+    # kube-system에 설치되는 공용 컨트롤러이므로 플랫폼 계층에서 관리합니다.
     argocd.argoproj.io/sync-wave: "1"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -21,6 +22,7 @@ metadata:
 spec:
   project: default
 
+  # 외부 Helm chart와 Git 저장소 values 파일을 함께 사용합니다.
   sources:
     - repoURL: https://kubernetes-sigs.github.io/metrics-server/
       chart: metrics-server
@@ -28,15 +30,17 @@ spec:
       helm:
         releaseName: metrics-server
         valueFiles:
-          - $values/k8s-helm/releases/metrics-server/values-nonprod.yaml
+          - $values/k8s-helm/releases/metrics-server/values-dev.yaml
     - repoURL: https://github.com/PinHouse/PinHouse_CLOUD
       targetRevision: main
       ref: values
 
+  # 배포 대상 클러스터
   destination:
     server: https://kubernetes.default.svc
     namespace: kube-system
 
+  # 동기화 정책
   syncPolicy:
     automated:
       prune: true

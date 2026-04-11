@@ -11,6 +11,7 @@ metadata:
   namespace: argocd
 
 spec:
+  # 라벨을 기준으로 Image Updater 적용 대상을 찾습니다.
   applicationRefs:
     - namePattern: "*"
       labelSelectors:

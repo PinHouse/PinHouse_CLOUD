@@ -13,6 +13,7 @@ metadata:
     pinhouse.co.kr/environment: dev
     pinhouse.co.kr/component: platform
   annotations:
+    # 컨트롤러가 준비된 뒤 Gateway, Certificate, ExternalSecret 같은 실제 리소스를 생성합니다.
     argocd.argoproj.io/sync-wave: "2"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -21,6 +22,7 @@ metadata:
 spec:
   project: default
 
+  # 로컬 Helm chart를 사용해 플랫폼 공통 리소스를 배포합니다.
   source:
     repoURL: https://github.com/PinHouse/PinHouse_CLOUD
     targetRevision: main
@@ -30,10 +32,12 @@ spec:
       valueFiles:
         - values-dev.yaml
 
+  # 배포 대상 클러스터
   destination:
     server: https://kubernetes.default.svc
     namespace: platform-system
 
+  # 동기화 정책
   syncPolicy:
     automated:
       prune: true
