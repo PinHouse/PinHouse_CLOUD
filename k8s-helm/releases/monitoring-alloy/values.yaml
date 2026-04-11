@@ -78,19 +78,7 @@ alloy:
           }
         }
 
-        // ServiceMonitor 리소스를 읽어 메트릭 대상을 자동으로 수집합니다.
-        prometheus.operator.servicemonitors "cluster" {
-          forward_to = [prometheus.remote_write.prometheus.receiver]
-
-          clustering {
-            enabled = true
-          }
-
-          scrape {
-            default_scrape_interval = "30s"
-            default_scrape_timeout  = "10s"
-          }
-        }
+        // TODO! ServiceMonitor는 추후 추가 예정
 
         // PodMonitor 리소스를 읽어 Pod 단위 메트릭 대상을 자동으로 수집합니다.
         prometheus.operator.podmonitors "cluster" {
@@ -124,13 +112,19 @@ alloy:
         // Logs
         // ========================================
         // 각 Alloy Pod는 자신이 올라간 노드의 Pod 로그만 읽도록 범위를 제한합니다.
-        discovery.kubernetes "pods_on_same_node" {
-          role = "pod"
+        loki.source.podlogs "pods" {
+          forward_to = [loki.relabel.pod_logs.receiver]
 
-          selectors {
-            role  = "pod"
-            field = "spec.nodeName=" + coalesce(sys.env("HOSTNAME"), constants.hostname)
+          node_filter {
+            enabled = true
           }
+        }
+
+        // CRI 로그 포맷을 파싱한 뒤 Loki로 전달합니다.
+        loki.process "pod_logs" {
+          forward_to = [loki.write.default.receiver]
+
+          stage.cri {}
         }
 
         // Kubernetes 메타데이터를 Loki 조회용 라벨로 정리합니다.
@@ -161,68 +155,45 @@ alloy:
             target_label  = "node"
           }
 
-          // service 기본값은 컨테이너 이름으로 두어 앱 라벨이 없는 로그도 조회 가능하게 합니다.
+          // service 추출 규칙: 우선순위가 낮은 것부터 높은 순서로 덮어씁니다.
+
+          // 1. 기본값: 컨테이너 이름
           rule {
             source_labels = ["__meta_kubernetes_pod_container_name"]
-            regex         = "(.+)"
+            target_label  = "service"
+          }
+
+          // 2. Pod controller가 ReplicaSet이면 Deployment 이름 추출
+          // ReplicaSet 이름 형식: <deployment-name>-<pod-template-hash>
+          // pod-template-hash는 마지막 하이픈 뒤의 8-10자리 영숫자
+          rule {
+            source_labels = ["__meta_kubernetes_pod_controller_kind", "__meta_kubernetes_pod_controller_name"]
+            separator     = "/"
+            regex         = "ReplicaSet/(.+)-[a-z0-9]{8,10}$"
             replacement   = "$1"
             target_label  = "service"
           }
 
-          // 현재 애플리케이션 매니페스트가 주로 사용하는 app 라벨이 있으면 service를 앱 이름으로 맞춥니다.
+          // 3. app 라벨이 있으면 우선 사용
           rule {
             source_labels = ["__meta_kubernetes_pod_label_app"]
             regex         = "(.+)"
-            replacement   = "$1"
             target_label  = "service"
           }
 
-          // 표준 app.kubernetes.io/name 라벨이 있으면 service를 그 값으로 정규화합니다.
+          // 4. 표준 app.kubernetes.io/name 라벨이 있으면 최우선
           rule {
             source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
             regex         = "(.+)"
-            replacement   = "$1"
             target_label  = "service"
           }
 
-          // service_name은 최종 service 값을 그대로 복사해 Tempo 연동이나 대시보드 변수에 재사용합니다.
-          rule {
-            source_labels = ["service"]
-            regex         = "(.+)"
-            replacement   = "$1"
-            target_label  = "service_name"
-          }
-
-          // job 기본값은 namespace/pod 형식으로 두어 app 라벨이 없는 로그도 식별할 수 있게 합니다.
-          rule {
-            source_labels = ["__meta_kubernetes_namespace", "__meta_kubernetes_pod_name"]
-            separator     = "/"
-            regex         = "(.+)/(.+)"
-            replacement   = "$1/$2"
-            target_label  = "job"
-          }
-
-          // service가 정규화됐으면 job도 namespace/service 형식으로 맞춥니다.
+          // job은 namespace/service 형식으로 설정합니다.
           rule {
             source_labels = ["__meta_kubernetes_namespace", "service"]
             separator     = "/"
-            regex         = "(.+)/(.+)"
-            replacement   = "$1/$2"
             target_label  = "job"
           }
-        }
-
-        // CRI 로그 포맷을 파싱한 뒤 Loki로 전달합니다.
-        loki.process "pod_logs" {
-          forward_to = [loki.write.default.receiver]
-
-          stage.cri {}
-        }
-
-        // 현재 노드의 Pod 로그를 읽어 relabel 단계로 넘깁니다.
-        loki.source.kubernetes "pods" {
-          targets    = discovery.kubernetes.pods_on_same_node.targets
-          forward_to = [loki.relabel.pod_logs.receiver]
         }
 
         // 공통 외부 라벨을 함께 붙여 Loki로 전송합니다.
