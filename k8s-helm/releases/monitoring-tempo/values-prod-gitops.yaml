@@ -85,9 +85,10 @@ tempo:
   overrides:
     defaults:
       metrics_generator:
-        # RED 메트릭 생성을 위해 span-metrics processor를 명시적으로 활성화합니다.
+        # RED 메트릭과 TraceQL metrics 생성을 위해 processor를 명시적으로 활성화합니다.
         processors:
           - span-metrics
+          - local-blocks
 
   metricsGenerator:
     # 트레이스에서 RED 메트릭(Rate, Error, Duration)을 자동 생성합니다.
@@ -101,6 +102,10 @@ tempo:
         cpu: 500m
         memory: 1Gi
     config:
+      processor:
+        local_blocks:
+          # TraceQL metrics와 Traces Drilldown이 최근 데이터뿐 아니라 저장소 기준으로도 조회되게 합니다.
+          flush_to_storage: true
       # Prometheus로 메트릭을 전송합니다.
       storage:
         remote_write:
