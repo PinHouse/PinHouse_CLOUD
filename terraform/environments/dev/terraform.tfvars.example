@@ -1,0 +1,102 @@
+# ========================================
+# 프로젝트 기본 값
+# ========================================
+project_id = "your-prod-gcp-project-id"
+project    = "pinhouse"
+
+# ========================================
+# 배포 환경 기본 값
+# ========================================
+region      = "asia-northeast3"
+environment = "dev"
+
+# ========================================
+# VPC 관련 값
+# ========================================
+vpc_name = "dev-vpc"
+
+# 직접 SSH를 열지 않고 IAP만 사용할 경우 빈 배열로 둡니다.
+ssh_source_ranges = []
+
+enable_iap_ssh        = true
+iap_ssh_members       = ["group:platform@example.com"]
+iap_ssh_admin_members = ["group:sre-admin@example.com"]
+
+enable_nat = true
+
+# ========================================
+# Artifact Registry 관련 값
+# ========================================
+artifact_registry_location = "asia-northeast3"
+
+artifact_registry_repositories = {
+  fe = {
+    repository_id  = "pinhouse-dev-fe"
+    format         = "DOCKER"
+    description    = "프로덕션 환경용 프런트엔드 이미지 저장소"
+    immutable_tags = false
+  }
+  be = {
+    repository_id  = "pinhouse-dev-be"
+    format         = "DOCKER"
+    description    = "프로덕션 환경용 백엔드 이미지 저장소"
+    immutable_tags = false
+  }
+}
+
+google_api_domain_option = "private.googleapis.com"
+
+# ========================================
+# Kubernetes 컴퓨트 관련 값
+# ========================================
+k8s_master_instance_group_size = 1
+k8s_worker_instance_group_size = 2
+
+enable_autoscaling       = true
+autoscaling_min_replicas = 2
+autoscaling_max_replicas = 5
+
+k8s_master_machine_type    = "e2-custom-2-4096"
+k8s_worker_machine_type    = "e2-custom-2-4096"
+k8s_node_boot_disk_size_gb = 50
+k8s_node_source_image      = "ubuntu-os-cloud/ubuntu-2204-lts"
+k8s_pod_cidr               = "192.168.0.0/16"
+k8s_service_cidr           = "10.96.0.0/12"
+calico_version             = "v3.31.4"
+
+# ========================================
+# 스토리지 관련 값
+# ========================================
+create_storage_buckets = true
+create_monitoring_buckets = true
+storage_location       = "ASIA-NORTHEAST3"
+
+# CORS 허용 Origin
+allowed_cors_origins = [
+  "https://www.example.com",
+  "https://api.example.com",
+]
+
+# ========================================
+# 로드 밸런서 관련 값
+# ========================================
+create_load_balancer = true
+load_balancer_proxy_only_subnet_cidr = "10.2.10.0/23"
+nginx_gateway_http_node_port         = 30080
+nginx_gateway_https_node_port        = 30443
+
+# ========================================
+# Secret Manager 관련 값
+# ========================================
+secret_manager_secret_ids = [
+   "Dev_BE_DB_URL"
+ ]
+
+ESO 또는 특정 서비스 계정에 접근 권한을 줄 때만 아래 값을 채웁니다.
+secret_manager_secret_iam_members = {
+   eso = {
+     secret_id = "Dev_BE_DB_URL"
+     role      = "roles/secretmanager.secretAccessor"
+     member    = "serviceAccount:example-secrets@example-pinhouse.iam.gserviceaccount.com"
+   }
+}
