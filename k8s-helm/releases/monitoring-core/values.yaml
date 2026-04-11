@@ -61,7 +61,7 @@ kube-prometheus-stack:
         uid: tempo
         type: tempo
         access: proxy
-        url: http://monitoring-tempo-query-frontend.monitoring.svc.cluster.local:3100
+        url: http://monitoring-tempo-query-frontend.monitoring.svc.cluster.local:3200
         isDefault: false
 
   prometheus:
