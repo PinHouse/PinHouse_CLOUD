@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+
+# 기본 설정
+metadata:
+  name: pinhouse-fe
+
+# 스펙
+spec:
+  replicas: 2
+
+  template:
+    metadata:
+      labels:
+        environment: dev
+
+    spec:
+      containers:
+        - name: pinhouse-fe
