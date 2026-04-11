@@ -1,0 +1,205 @@
+# Dev values
+
+# SSL 매니저
+certManager:
+  enabled: true
+
+  # 실제 이메일 주소로 변경
+  acmeEmail: "pinhousekr@gmail.com"
+
+  # 비운영 환경에서는 Let's Encrypt Staging issuer로 검증합니다.
+  letsencrypt:
+    staging:
+      enabled: true
+    production:
+      enabled: false
+
+  # DNS-01 Challenge (CloudDNS)
+  cloudDNS:
+    projectId: "dev-pinhouse"
+
+# 게이트웨이
+gateway:
+  enabled: true
+  name: pinhouse-gateway
+  namespace: nginx-gateway
+  gatewayClassName: nginx
+
+  http:
+    enabled: true
+    port: 80
+
+  # HTTP to HTTPS 리다이렉트 (301 Permanent Redirect)
+  http_redirect:
+    enabled: true
+
+  # 환경별 리스너
+  environments:
+    - name: dev
+      enabled: true
+      tlsSecretName: pinhouse-tls-dev
+      services:
+        - name: web
+          hostname: dev.pinhouse.co.kr
+        - name: api
+          hostname: api.dev.pinhouse.co.kr
+
+    - name: stg
+      enabled: false
+      tlsSecretName: pinhouse-tls-stg
+      services:
+        - name: web
+          hostname: stg.pinhouse.co.kr
+        - name: api
+          hostname: api.stg.pinhouse.co.kr
+
+  # 추가 리스너
+  listeners:
+    argo:
+      enabled: true
+      domain: argo.dev.pinhouse.co.kr
+      tlsSecretName: pinhouse-tls-argo
+
+    grafana:
+      enabled: true
+      domain: grafana.dev.pinhouse.co.kr
+      tlsSecretName: pinhouse-tls-grafana
+
+# 접근 제어 (Access Control) - 비운영도 운영과 같은 기준으로 차단
+accessControl:
+  enabled: true
+  blockedPaths:
+    - name: api-dev-swagger
+      hostnames: ["api.dev.pinhouse.co.kr"]
+      paths:
+        - "/swagger-ui"
+        - "/v3/api-docs"
+
+    - name: api-dev-management
+      hostnames: ["api.dev.pinhouse.co.kr"]
+      paths:
+        - "/actuator"
+        - "/metrics"
+        - "/prometheus"
+
+    - name: common-dev-metrics
+      hostnames: ["dev.pinhouse.co.kr"]
+      paths:
+        - "/api/metrics"
+        - "/prometheus"
+
+# 네트워크 정책
+networkPolicy:
+  enabled: false
+
+  database:
+    rds:
+      cidr: "192.168.0.0/16"
+    ec2:
+      ip: "172.16.10.81/32"
+
+  ports:
+    frontend: 3000
+    backend: 8080
+    ai: 8000
+    postgres: 5432
+    redis: 6379
+    rabbitmq: 5672
+    dns: 53
+    http: 80
+    https: 443
+
+  namespaces:
+    - name: nginx-gateway
+      enabled: true
+    - name: app
+      enabled: true
+
+# 인증서
+certificates:
+  enabled: true
+  issuer: letsencrypt-staging
+
+  certs:
+    - name: pinhouse-tls-dev
+      namespace: nginx-gateway
+      dnsNames:
+        - dev.pinhouse.co.kr
+        - api.dev.pinhouse.co.kr
+      enabled: true
+
+    - name: pinhouse-tls-stg
+      namespace: nginx-gateway
+      dnsNames:
+        - stg.pinhouse.co.kr
+        - api.stg.pinhouse.co.kr
+      enabled: false
+
+    - name: pinhouse-tls-argo
+      namespace: nginx-gateway
+      dnsNames:
+        - argo.dev.pinhouse.co.kr
+      enabled: true
+
+    - name: pinhouse-tls-grafana
+      namespace: nginx-gateway
+      dnsNames:
+        - grafana.dev.pinhouse.co.kr
+      enabled: true
+
+# GCP Secret Manager 기반 시크릿 적용
+externalSecrets:
+  enabled: true
+
+  secretStores:
+    - kind: ClusterSecretStore
+      name: gcp-secret-manager
+      spec:
+        provider:
+          gcpsm:
+            projectID: dev-pinhouse
+
+  secrets:
+    - name: backend-secret-kv
+      namespace: dev-app
+      spec:
+        refreshInterval: 1h
+        secretStoreRef:
+          name: gcp-secret-manager
+          kind: ClusterSecretStore
+        target:
+          name: backend-secret-kv
+          creationPolicy: Owner
+          deletionPolicy: Retain
+        dataFrom:
+          - find:
+              name:
+                regexp: "^Dev_BE_"
+              conversionStrategy: Default
+              decodingStrategy: None
+            rewrite:
+              - regexp:
+                  source: "^Dev_BE_(.*)$"
+                  target: "$1"
+
+    - name: monitoring-secret-kv
+      namespace: monitoring
+      spec:
+        refreshInterval: 1h
+        secretStoreRef:
+          name: gcp-secret-manager
+          kind: ClusterSecretStore
+        target:
+          name: monitoring-secret-kv
+          creationPolicy: Owner
+          deletionPolicy: Retain
+        dataFrom:
+          - find:
+              name:
+                regexp: "^Dev_MONITORING_"
+              conversionStrategy: Default
+              decodingStrategy: None
+            rewrite:
+              - regexp:
+                  source: "^Dev_MONITORING_(.*)$"
+                  target: "$1"

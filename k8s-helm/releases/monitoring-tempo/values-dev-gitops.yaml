@@ -1,0 +1,100 @@
+# ========================================
+# Dev Monitoring Tempo GitOps 값
+# ========================================
+
+tempo:
+  # Tempo 공용 ServiceAccount 이름을 고정해 두면 인증 설정을 추적하기 쉽습니다.
+  serviceAccount:
+    create: true
+    name: monitoring-tempo-sa
+    annotations: {}
+
+  storage:
+    # 트레이스 원본 데이터는 GCS 버킷에 저장합니다.
+    trace:
+      gcs:
+        bucket_name: "pinhouse-dev-tempo"
+      block:
+        retention: 336h
+
+  ingester:
+    replicas: 1
+    persistence:
+      enabled: true
+      size: 20Gi
+      storageClass: "gce-standard-rwo"
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+          cpu: 1000m
+          memory: 2Gi
+
+  distributor:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+          cpu: 500m
+          memory: 512Mi
+
+  compactor:
+    replicas: 1
+    config:
+      compaction:
+        block_retention: 336h
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+          cpu: 500m
+          memory: 1Gi
+
+  querier:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+          cpu: 500m
+          memory: 1Gi
+
+  queryFrontend:
+    replicas: 1
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+  overrides:
+    defaults:
+      metrics_generator:
+        processors:
+          - span-metrics
+          - local-blocks
+
+  metricsGenerator:
+    enabled: true
+    replicas: 1
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+    config:
+      processor:
+        local_blocks:
+          flush_to_storage: true
+      storage:
+        remote_write:
+          - url: http://monitoring-core-kube-prome-prometheus.monitoring.svc.cluster.local:9090/api/v1/write

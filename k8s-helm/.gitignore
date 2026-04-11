@@ -4,6 +4,7 @@
 platform-chart/**/*.yaml
 platform-chart/**/README.md
 !platform-chart/**/values.yaml
+!platform-chart/**/values-dev.yaml
 !platform-chart/**/values-nonprod.yaml
 !platform-chart/**/values-prod.yaml
 !platform-chart/templates/**/*.yaml
@@ -26,6 +27,8 @@ releases/argocd/values-*.yaml
 releases/monitoring-*/values-*.yaml
 releases/monitoring-*/README.md
 !releases/monitoring-*/values-prod-gitops.yaml
+!releases/monitoring-*/values-dev-gitops.yaml
+!releases/monitoring-*/values-nonprod-gitops.yaml
 
 # ========================================
 # 로컬 오버라이드 파일

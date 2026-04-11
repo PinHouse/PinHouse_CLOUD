@@ -1,0 +1,75 @@
+# ========================================
+# Dev Monitoring Core GitOps 값
+# ========================================
+
+kube-prometheus-stack:
+  grafana:
+    # Grafana 관리자 계정은 ExternalSecret이 만든 Kubernetes Secret을 사용합니다.
+    admin:
+      existingSecret: monitoring-secret-kv
+      userKey: GRAFANA_ADMIN_USER
+      passwordKey: GRAFANA_ADMIN_PASSWORD
+
+    # Grafana Sidecar를 통한 대시보드 자동 로딩 설정
+    sidecar:
+      dashboards:
+        enabled: true
+        label: grafana_dashboard
+        labelValue: "1"
+        searchNamespace: ALL
+        folderAnnotation: grafana_folder
+        provider:
+          foldersFromFilesStructure: true
+
+    # 비운영도 데이터 보존과 설정 확인을 위해 PVC를 사용합니다.
+    persistence:
+      enabled: true
+      type: sts
+      size: 20Gi
+      storageClassName: "gce-standard-rwo"
+
+  prometheus:
+    prometheusSpec:
+      retention: 15d
+      retentionSize: 50GB
+      enableRemoteWriteReceiver: true
+
+      serviceMonitorSelectorNilUsesHelmValues: false
+      serviceMonitorSelector:
+        matchLabels:
+          "pinhouse.co.kr/scrape-via": "prometheus"
+      serviceMonitorNamespaceSelector: {}
+
+      podMonitorSelectorNilUsesHelmValues: false
+      podMonitorSelector:
+        matchLabels:
+          "pinhouse.co.kr/scrape-via": "prometheus"
+      podMonitorNamespaceSelector: {}
+
+      probeSelectorNilUsesHelmValues: false
+      probeSelector:
+        matchLabels:
+          "pinhouse.co.kr/scrape-via": "prometheus"
+      probeNamespaceSelector: {}
+
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: "gce-standard-rwo"
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: 50Gi
+
+  alertmanager:
+    alertmanagerSpec: {}
+
+  prometheusOperator:
+    resources: {}
+
+  kube-state-metrics:
+    resources: {}
+
+  prometheus-node-exporter:
+    resources: {}
