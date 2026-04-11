@@ -81,3 +81,27 @@ tempo:
       limits:
         cpu: 500m
         memory: 512Mi
+
+  overrides:
+    defaults:
+      metrics_generator:
+        # RED 메트릭 생성을 위해 span-metrics processor를 명시적으로 활성화합니다.
+        processors:
+          - span-metrics
+
+  metricsGenerator:
+    # 트레이스에서 RED 메트릭(Rate, Error, Duration)을 자동 생성합니다.
+    enabled: true
+    replicas: 1
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+    config:
+      # Prometheus로 메트릭을 전송합니다.
+      storage:
+        remote_write:
+          - url: http://monitoring-core-kube-prome-prometheus.monitoring.svc.cluster.local:9090/api/v1/write

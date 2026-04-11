@@ -43,7 +43,8 @@ tempo:
     replicas: 1
 
   metricsGenerator:
-    enabled: false
+    enabled: true
+    replicas: 1
 
   gateway:
     enabled: false
