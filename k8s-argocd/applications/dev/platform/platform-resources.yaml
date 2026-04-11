@@ -1,0 +1,42 @@
+# ===================================
+# Dev Platform Resources
+# ===================================
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+
+# 기본 정보
+metadata:
+  name: platform-resources-dev
+  namespace: argocd
+  labels:
+    pinhouse.co.kr/environment: dev
+    pinhouse.co.kr/component: platform
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+
+# 스펙
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/PinHouse/PinHouse_CLOUD
+    targetRevision: main
+    path: k8s-helm/platform-chart
+    helm:
+      releaseName: pinhouse-platform
+      valueFiles:
+        - values-dev.yaml
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: platform-system
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

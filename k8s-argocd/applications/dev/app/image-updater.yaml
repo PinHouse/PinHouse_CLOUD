@@ -1,0 +1,20 @@
+# ===================================
+# Image Updator
+# ===================================
+
+apiVersion: argocd-image-updater.argoproj.io/v1alpha1
+kind: ImageUpdater
+
+# 기본 정보
+metadata:
+  name: dev-applications
+  namespace: argocd
+
+spec:
+  applicationRefs:
+    - namePattern: "*"
+      labelSelectors:
+        matchLabels:
+          pinhouse.co.kr/image-updater: enabled
+          pinhouse.co.kr/environment: dev
+      useAnnotations: true

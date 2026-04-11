@@ -1,0 +1,42 @@
+# ===================================
+# Dev Monitoring Loki
+# ===================================
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+
+# 기본 정보
+metadata:
+  name: monitoring-loki-dev
+  namespace: argocd
+  labels:
+    pinhouse.co.kr/environment: dev
+    pinhouse.co.kr/component: monitoring
+    pinhouse.co.kr/monitoring-component: loki
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/PinHouse/PinHouse_CLOUD
+    targetRevision: main
+    path: k8s-helm/releases/monitoring-loki
+    helm:
+      releaseName: monitoring-loki
+      valueFiles:
+        - values-dev-gitops.yaml
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

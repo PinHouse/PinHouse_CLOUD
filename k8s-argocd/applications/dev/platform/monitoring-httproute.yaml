@@ -1,0 +1,38 @@
+# ===================================
+# Dev Platform Monitoring HTTPRoute
+# ===================================
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+
+# 기본 정보
+metadata:
+  name: platform-monitoring-httproute-dev
+  namespace: argocd
+  labels:
+    pinhouse.co.kr/environment: dev
+    pinhouse.co.kr/component: platform
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+
+# 스펙
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/PinHouse/PinHouse_CLOUD
+    targetRevision: main
+    path: k8s-kustomize/platform/monitoring/overlays/dev
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

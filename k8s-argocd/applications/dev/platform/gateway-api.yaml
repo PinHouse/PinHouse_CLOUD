@@ -1,0 +1,39 @@
+# ===================================
+# Dev Platform Gateway API CRD
+# ===================================
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+
+# 기본 정보
+metadata:
+  name: platform-gateway-api-dev
+  namespace: argocd
+  labels:
+    pinhouse.co.kr/environment: dev
+    pinhouse.co.kr/component: platform
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+
+# 스펙
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/kubernetes-sigs/gateway-api
+    targetRevision: v1.2.1
+    path: config/crd/standard
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

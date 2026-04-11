@@ -1,0 +1,47 @@
+# ===================================
+# Dev Backend
+# ===================================
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+
+# 기본 정보
+metadata:
+  name: backend-dev
+  namespace: argocd
+  labels:
+    pinhouse.co.kr/environment: dev
+    pinhouse.co.kr/image-updater: enabled
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: asia-northeast3-docker.pkg.dev/dev-pinhouse/pinhouse-dev-be/pinhouse-server
+    argocd-image-updater.argoproj.io/backend.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/backend.allow-tags: regexp:^[0-9]{8}_[0-9]{6}-[a-f0-9]{7}$
+    argocd-image-updater.argoproj.io/backend.kustomize.image-name: REPLACE_ME
+    argocd-image-updater.argoproj.io/write-back-method: git
+    argocd-image-updater.argoproj.io/git-branch: main
+
+    notifications.argoproj.io/subscribe.on-sync-running.backend-nonprod: ""
+    notifications.argoproj.io/subscribe.on-deployed.backend-nonprod: ""
+    notifications.argoproj.io/subscribe.on-sync-failed.backend-nonprod: ""
+    notifications.argoproj.io/subscribe.on-health-degraded.backend-nonprod: ""
+
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/PinHouse/PinHouse_CLOUD
+    targetRevision: main
+    path: k8s-kustomize/overlays/dev/backend
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: dev-app
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

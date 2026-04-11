@@ -1,0 +1,46 @@
+# ===================================
+# Dev Platform Metrics Server
+# ===================================
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+
+# 기본 정보
+metadata:
+  name: platform-metrics-server-dev
+  namespace: argocd
+  labels:
+    pinhouse.co.kr/environment: dev
+    pinhouse.co.kr/component: platform
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+
+# 스펙
+spec:
+  project: default
+
+  sources:
+    - repoURL: https://kubernetes-sigs.github.io/metrics-server/
+      chart: metrics-server
+      targetRevision: 3.13.0
+      helm:
+        releaseName: metrics-server
+        valueFiles:
+          - $values/k8s-helm/releases/metrics-server/values-nonprod.yaml
+    - repoURL: https://github.com/PinHouse/PinHouse_CLOUD
+      targetRevision: main
+      ref: values
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
