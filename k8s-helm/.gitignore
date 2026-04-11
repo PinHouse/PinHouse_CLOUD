@@ -20,6 +20,7 @@ releases/**/secrets/*.yaml
 # ========================================
 releases/argocd/values-*.yaml
 !releases/argocd/*.yaml.example
+!releases/argocd/values-dev.yaml
 
 # ========================================
 # Monitoring 로컬 오버라이드

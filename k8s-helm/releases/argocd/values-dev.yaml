@@ -1,0 +1,18 @@
+# Dev 환경용 Argo CD 설정
+global:
+  domain: argo.dev.pinhouse.co.kr
+
+configs:
+  cm:
+    # Git/Helm 변경 감지 주기.
+    timeout.reconciliation: "60s"
+    timeout.reconciliation.jitter: "15s"
+
+  # TLS Termination을 Gateway에서 수행하므로 ArgoCD Server는 insecure 모드로 실행
+  params:
+    server.insecure: "true"
+
+# ArgoCD Server에 --insecure 플래그 추가
+server:
+  extraArgs:
+    - --insecure
