@@ -1,0 +1,27 @@
+{{- $root := . -}}
+{{- range $path, $_ := $root.Files.Glob "dashboards/**/*.json" }}
+{{- $relativePath := trimPrefix "dashboards/" $path -}}
+{{- $configMapName := trimSuffix ".json" $relativePath | replace "/" "-" | replace "_" "-" | lower -}}
+{{- $folderName := base (dir $relativePath) -}}
+---
+apiVersion: v1
+kind: ConfigMap
+
+# 대시보드 ConfigMap 생성
+metadata:
+  name: {{ printf "%s-%s" $root.Release.Name $configMapName | trunc 63 | trimSuffix "-" }}
+  labels:
+    grafana_dashboard: "1"
+    app.kubernetes.io/name: {{ $root.Chart.Name | quote }}
+    app.kubernetes.io/instance: {{ $root.Release.Name | quote }}
+    app.kubernetes.io/component: "grafana-dashboard"
+  {{- if ne $folderName "." }}
+
+  # 어노테이션
+  annotations:
+    grafana_folder: {{ $folderName | quote }}
+  {{- end }}
+data:
+  {{ base $path }}: |-
+{{ $root.Files.Get $path | indent 4 }}
+{{- end }}

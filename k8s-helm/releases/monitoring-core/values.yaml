@@ -31,6 +31,21 @@ kube-prometheus-stack:
     # 운영 전에는 ExternalSecret 기반 existingSecret으로 전환하는 것을 권장합니다.
     adminPassword: "change-me-before-apply"
 
+    # Grafana Sidecar를 통한 대시보드 자동 로딩 설정
+    sidecar:
+      dashboards:
+        enabled: true
+        # ConfigMap에서 찾을 라벨
+        label: grafana_dashboard
+        labelValue: "1"
+        # 모든 네임스페이스에서 대시보드 ConfigMap 검색
+        searchNamespace: ALL
+        # 폴더 어노테이션 지원
+        folderAnnotation: grafana_folder
+        # 대시보드 프로비저닝 설정
+        provider:
+          foldersFromFilesStructure: true
+
     # 리소스 요청/제한은 임시로 주석 처리하고 차트 기본값을 사용합니다.
     # resources:
     #   requests:
