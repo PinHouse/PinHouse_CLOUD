@@ -55,7 +55,7 @@ variable "iap_ssh_source_ranges" {
 variable "management_target_tags" {
   description = "SSH 및 IAP 관리 접근을 허용할 인스턴스 태그 목록입니다."
   type        = list(string)
-  default     = ["web-server"]
+  default     = ["k8s-master", "k8s-worker"]
 }
 
 variable "enable_nat" {
@@ -186,37 +186,109 @@ variable "create_storage_buckets" {
   default     = true
 }
 
+variable "create_monitoring_buckets" {
+  description = "모니터링 버킷 생성 여부입니다."
+  type        = bool
+  default     = false
+}
+
+variable "monitoring_loki" {
+  description = "Loki에서 사용할 모니터링 라벨입니다."
+  type        = string
+  default     = "loki"
+}
+
+variable "monitoring_tempo" {
+  description = "Tempo에서 사용할 모니터링 라벨입니다."
+  type        = string
+  default     = "tempo"
+}
+
 variable "storage_location" {
   description = "스토리지 버킷을 생성할 위치입니다."
   type        = string
   default     = "ASIA-NORTHEAST3"
 }
 
+variable "allowed_cors_origins" {
+  description = "정적 자산 버킷에서 허용할 CORS Origin 목록입니다."
+  type        = list(string)
+  default     = []
+}
+
 # ========================================
 # 컴퓨트 관련 변수
 # ========================================
-variable "create_web_instances" {
-  description = "웹 인스턴스 생성 여부입니다."
+variable "k8s_master_instance_group_size" {
+  description = "Kubernetes 마스터 관리형 인스턴스 그룹의 목표 인스턴스 수입니다."
+  type        = number
+  default     = 1
+}
+
+variable "k8s_worker_instance_group_size" {
+  description = "Kubernetes 워커 관리형 인스턴스 그룹의 목표 인스턴스 수입니다."
+  type        = number
+  default     = 1 # 개발 환경에서는 비용 절감을 위해 1개로 설정합니다.
+}
+
+variable "enable_autoscaling" {
+  description = "오토스케일링 사용 여부입니다."
   type        = bool
-  default     = true
+  default     = false # 개발 환경에서는 비활성화합니다.
 }
 
-variable "web_machine_type" {
-  description = "웹 서버에 사용할 머신 타입입니다."
+variable "autoscaling_min_replicas" {
+  description = "오토스케일링 최소 인스턴스 수입니다."
+  type        = number
+  default     = 1
+}
+
+variable "autoscaling_max_replicas" {
+  description = "오토스케일링 최대 인스턴스 수입니다."
+  type        = number
+  default     = 3 # 개발 환경에서는 3개로 제한합니다.
+}
+
+variable "k8s_master_machine_type" {
+  description = "Kubernetes 마스터 노드에 사용할 머신 타입입니다."
   type        = string
-  default     = "e2-small" # 개발 환경에 맞춘 소형 인스턴스입니다.
+  default     = "e2-custom-2-4096"
 }
 
-variable "web_source_image" {
-  description = "웹 서버 부팅 디스크에 사용할 이미지입니다."
+variable "k8s_worker_machine_type" {
+  description = "Kubernetes 워커 노드에 사용할 머신 타입입니다."
   type        = string
-  default     = "debian-cloud/debian-11"
+  default     = "e2-custom-2-4096"
 }
 
-variable "enable_web_external_ip" {
-  description = "웹 인스턴스 외부 IP 할당 여부입니다. false면 IAP와 Cloud NAT 기반 운영을 전제로 합니다."
-  type        = bool
-  default     = false
+variable "k8s_node_boot_disk_size_gb" {
+  description = "Kubernetes 노드 부팅 디스크 크기(GB)입니다."
+  type        = number
+  default     = 50
+}
+
+variable "k8s_node_source_image" {
+  description = "Kubernetes 노드 부팅 디스크에 사용할 이미지입니다."
+  type        = string
+  default     = "ubuntu-os-cloud/ubuntu-2204-lts"
+}
+
+variable "k8s_pod_cidr" {
+  description = "Kubernetes Pod CIDR 대역입니다. Calico IPPool과 kubeadm podSubnet에 동일하게 사용합니다."
+  type        = string
+  default     = "192.168.0.0/16"
+}
+
+variable "k8s_service_cidr" {
+  description = "Kubernetes Service CIDR 대역입니다."
+  type        = string
+  default     = "10.96.0.0/12"
+}
+
+variable "calico_version" {
+  description = "초기 설치에 사용할 Calico 오픈소스 릴리스 버전입니다."
+  type        = string
+  default     = "v3.31.4"
 }
 
 variable "service_account_email" {
@@ -232,6 +304,24 @@ variable "create_load_balancer" {
   description = "로드 밸런서 생성 여부입니다."
   type        = bool
   default     = false
+}
+
+variable "load_balancer_proxy_only_subnet_cidr" {
+  description = "외부 프록시 NLB용 proxy-only 서브넷 CIDR 대역입니다."
+  type        = string
+  default     = "10.0.10.0/23"
+}
+
+variable "nginx_gateway_http_node_port" {
+  description = "NGINX Gateway Fabric HTTP NodePort 포트입니다."
+  type        = number
+  default     = 30080
+}
+
+variable "nginx_gateway_https_node_port" {
+  description = "NGINX Gateway Fabric HTTPS NodePort 포트입니다."
+  type        = number
+  default     = 30443
 }
 
 # ========================================
