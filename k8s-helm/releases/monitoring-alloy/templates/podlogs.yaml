@@ -1,0 +1,87 @@
+{{- if .Values.podLogs.enabled }}
+
+apiVersion: monitoring.grafana.com/v1alpha2
+
+kind: PodLogs
+
+# 메타데이터
+metadata:
+  name: {{ .Release.Name }}-pods
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/name: monitoring-alloy
+    app.kubernetes.io/component: podlogs
+
+# 스펙. 현재는 모드 파드 수집 진행함.
+spec:
+  namespaceSelector: {}
+  selector: {}
+
+  # 라벨링
+  relabelings:
+    # 네임스페이스는 가장 기본적인 조회 축이라 그대로 보존합니다.
+    - sourceLabels:
+        - __meta_kubernetes_namespace
+      targetLabel: namespace
+
+    # Pod 이름을 그대로 라벨로 남겨 개별 인스턴스 추적에 사용합니다.
+    - sourceLabels:
+        - __meta_kubernetes_pod_name
+      targetLabel: pod
+
+    # 컨테이너 이름은 service fallback과 세부 필터링에 함께 사용합니다.
+    - sourceLabels:
+        - __meta_kubernetes_pod_container_name
+      targetLabel: container
+
+    # 장애 분석 시 노드 기준 조회가 가능하도록 노드 이름을 남깁니다.
+    - sourceLabels:
+        - __meta_kubernetes_pod_node_name
+      targetLabel: node
+
+    # service 추출 규칙: 우선순위가 낮은 것부터 높은 순서로 덮어씁니다.
+
+    # 1. 기본값: 컨테이너 이름
+    - sourceLabels:
+        - __meta_kubernetes_pod_container_name
+      targetLabel: service
+    # 2. Pod controller가 ReplicaSet이면 Deployment 이름 추출
+    - sourceLabels:
+        - __meta_kubernetes_pod_controller_kind
+        - __meta_kubernetes_pod_controller_name
+      separator: /
+      regex: ReplicaSet/(.+)-[a-z0-9]{8,10}$
+      replacement: $1
+      targetLabel: service
+
+    # 3. app 라벨이 있으면 우선 사용
+    - sourceLabels:
+        - __meta_kubernetes_pod_label_app
+      regex: (.+)
+      targetLabel: service
+
+    # 4. 표준 app.kubernetes.io/name 라벨이 있으면 최우선
+    - sourceLabels:
+        - __meta_kubernetes_pod_label_app_kubernetes_io_name
+      regex: (.+)
+      targetLabel: service
+
+    # Logs Drilldown이 우선 참조하는 service_name 라벨도 함께 맞춥니다.
+    - sourceLabels:
+        - service
+      targetLabel: service_name
+
+    # 서비스 네임스페이스는 워크로드 네임스페이스와 동일하게 둡니다.
+    - sourceLabels:
+        - __meta_kubernetes_namespace
+      targetLabel: service_namespace
+
+    # job은 namespace/service 형식으로 설정합니다.
+    - sourceLabels:
+        - __meta_kubernetes_namespace
+        - service
+      separator: /
+      targetLabel: job
+
+{{- end }}
