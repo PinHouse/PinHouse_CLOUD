@@ -1,0 +1,49 @@
+# ===================================
+# Dev Frontend
+# ===================================
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+
+# 기본 정보
+metadata:
+  name: frontend-dev
+  namespace: argocd
+  labels:
+    pinhouse.co.kr/environment: dev
+    pinhouse.co.kr/image-updater: enabled
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: asia-northeast3-docker.pkg.dev/dev-pinhouse/pinhouse-dev-fe/pinhouse-web
+    argocd-image-updater.argoproj.io/frontend.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/frontend.allow-tags: regexp:^[0-9]{8}_[0-9]{6}-[a-f0-9]{7}$
+    argocd-image-updater.argoproj.io/frontend.kustomize.image-name: REPLACE_ME
+    argocd-image-updater.argoproj.io/write-back-method: git
+    argocd-image-updater.argoproj.io/git-branch: main
+
+    notifications.argoproj.io/subscribe.on-deployed.frontend-nonprod: ""
+    notifications.argoproj.io/subscribe.on-sync-failed.frontend-nonprod: ""
+    notifications.argoproj.io/subscribe.on-health-degraded.frontend-nonprod: ""
+
+spec:
+  project: default
+
+  # Git 저장소에서 관리하는 매니페스트 경로입니다.
+  source:
+    repoURL: https://github.com/PinHouse/PinHouse_CLOUD
+    targetRevision: main
+    path: k8s-kustomize/overlays/dev/frontend
+
+  # 배포 대상 클러스터와 네임스페이스입니다.
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: dev-app
+
+  # Git 기준으로 자동 동기화합니다.
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

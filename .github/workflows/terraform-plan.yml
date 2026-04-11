@@ -24,6 +24,7 @@ jobs:
       GCP_WORKLOAD_IDENTITY_PROVIDER: ""
       GCP_SERVICE_ACCOUNT: ""
       TERRAFORM_STATE_BUCKET: ""
+      TERRAFORM_TFVARS_DEV: ""
       TERRAFORM_TFVARS_PROD: ""
     outputs:
       environments: ${{ steps.detect.outputs.environments || '[]' }}
@@ -45,11 +46,16 @@ jobs:
 
           # 변경된 환경 목록을 배열로 수집합니다.
           ENVIRONMENTS=()
+          if echo "$CHANGED_FILES" | grep -q "terraform/environments/dev/"; then
+            ENVIRONMENTS+=("dev")
+          fi
+
           if echo "$CHANGED_FILES" | grep -q "terraform/environments/prod/"; then
             ENVIRONMENTS+=("prod")
           fi
 
           if echo "$CHANGED_FILES" | grep -q "terraform/modules/"; then
+            ENVIRONMENTS+=("dev")
             ENVIRONMENTS+=("prod")
           fi
 
@@ -73,6 +79,7 @@ jobs:
       GCP_WORKLOAD_IDENTITY_PROVIDER: ""
       GCP_SERVICE_ACCOUNT: ""
       TERRAFORM_STATE_BUCKET: ""
+      TERRAFORM_TFVARS_DEV: ""
       TERRAFORM_TFVARS_PROD: ""
 
     steps:
@@ -99,11 +106,12 @@ jobs:
     runs-on: ubuntu-22.04
     needs: detect-changes
     if: (needs.detect-changes.outputs.environments || '[]') != '[]' # 변경된 환경이 있을 때만 실행합니다.
+    environment: ${{ matrix.environment == 'dev' && 'PinHouse_dev' || matrix.environment == 'prod' && 'PinHouse_prod' }}
     env:
       GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
       GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
       TERRAFORM_STATE_BUCKET: ${{ secrets.TERRAFORM_STATE_BUCKET }}
-      TERRAFORM_TFVARS_PROD: ${{ secrets.TERRAFORM_TFVARS_PROD }}
+      TERRAFORM_TFVARS: ${{ secrets.TERRAFORM_TFVARS }}
     strategy:
       fail-fast: false # 한 환경 실패가 다른 환경 확인을 막지 않도록 유지합니다.
       matrix:
@@ -140,7 +148,7 @@ jobs:
         id: state-bucket
         run: |
           if [ -z "${{ env.TERRAFORM_STATE_BUCKET }}" ]; then
-            echo "오류: GitHub Secrets에 TERRAFORM_STATE_BUCKET을 설정해야 합니다."
+            echo "오류: GitHub Environment Secret TERRAFORM_STATE_BUCKET을 설정해야 합니다."
             exit 1
           fi
 
@@ -158,15 +166,12 @@ jobs:
         if: steps.init.outcome == 'success'
         working-directory: terraform/environments/${{ matrix.environment }}
         run: |
-          TFVARS_CONTENT="${TERRAFORM_TFVARS_PROD}"
-          SECRET_NAME="TERRAFORM_TFVARS_PROD"
-
-          if [ -z "${TFVARS_CONTENT}" ]; then
-            echo "오류: GitHub Secret ${SECRET_NAME}를 설정해야 합니다."
+          if [ -z "${TERRAFORM_TFVARS}" ]; then
+            echo "오류: GitHub Environment Secret TERRAFORM_TFVARS를 설정해야 합니다."
             exit 1
           fi
 
-          printf '%s\n' "${TFVARS_CONTENT}" > terraform.tfvars
+          printf '%s\n' "${TERRAFORM_TFVARS}" > terraform.tfvars
           chmod 600 terraform.tfvars
 
       - name: Terraform 유효성 검사

@@ -1,6 +1,5 @@
 # ===================================
-# App of Apps 패턴
-# Prod 환경의 모든 애플리케이션을 관리
+# Dev Monitoring Root
 # ===================================
 
 apiVersion: argoproj.io/v1alpha1
@@ -8,9 +7,11 @@ kind: Application
 
 # 기본 정보
 metadata:
-  name: root-prod
+  name: monitoring-root-dev
   namespace: argocd
-  # Finalizers를 설정하면 Application 삭제 시 관련 리소스도 함께 삭제됨
+  labels:
+    pinhouse.co.kr/environment: dev
+    pinhouse.co.kr/component: monitoring
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 
@@ -18,34 +19,23 @@ metadata:
 spec:
   project: default
 
-  # GitOps 소 설정
   # Git 저장소에서 관리하는 매니페스트 경로입니다.
   source:
-    # Git 리포지토리 URL
     repoURL: https://github.com/PinHouse/PinHouse_CLOUD
-    # GitOps 기준 브랜치인 main을 참조
     targetRevision: main
-    # ArgoCD Application 매니페스트가 있는 디렉토리
-    path: k8s-argocd/applications/prod
-    # Directory 설정
+    path: k8s-argocd/applications/dev/monitoring
     directory:
-      # 재귀적으로 하위 디렉토리도 포함
       recurse: false
 
-  # 배포 대상 클러스터
   # 배포 대상 클러스터와 네임스페이스입니다.
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
 
-  # 동기화 정책
   # Git 기준으로 자동 동기화합니다.
   syncPolicy:
-    # GitOps 자동 동기화 설정
     automated:
-      # GitOps와 다르면, 삭제
       prune: true
-      # GitOps와 다르면, 자동 수정
       selfHeal: true
     syncOptions:
       - CreateNamespace=true

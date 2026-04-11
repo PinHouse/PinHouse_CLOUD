@@ -1,0 +1,46 @@
+# ========================================
+# Dev Monitoring Loki GitOps 값
+# ========================================
+
+loki:
+  # Loki 공용 ServiceAccount 이름을 고정해 두면 추후 인증 방식 전환 시 추적이 쉽습니다.
+  serviceAccount:
+    create: true
+    name: monitoring-loki-sa
+    annotations: {}
+
+  loki:
+    # 로그 보관 기간은 14일로 유지합니다.
+    limits_config:
+      retention_period: 336h
+
+    # Loki 로그 청크와 인덱스는 GCS 버킷에 저장합니다.
+    storage:
+      bucketNames:
+        chunks: "pinhouse-dev-loki"
+        ruler: "pinhouse-dev-loki"
+        admin: "pinhouse-dev-loki"
+      gcs:
+        bucket_name: "pinhouse-dev-loki"
+
+  singleBinary:
+    replicas: 1
+
+    persistence:
+      enabled: true
+      size: 30Gi
+      storageClass: "gce-standard-rwo"
+
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 2000m
+        memory: 1Gi
+
+  chunksCache:
+    enabled: false
+
+  resultsCache:
+    allocatedMemory: 256
