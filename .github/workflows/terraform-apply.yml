@@ -4,14 +4,14 @@ name: PinHouse Terraform Apply 파이프라인
 on:
   workflow_dispatch:
     inputs:
-      environment:
-        description: "적용할 환경을 선택합니다. dev, staging, prod 중 하나를 사용합니다."
+      target:
+        description: "적용할 대상을 선택합니다. all을 선택하면 dev와 prod를 병렬로 적용합니다."
         required: true
         type: choice
         options:
           - dev
-          - staging
           - prod
+          - all
       confirm:
         description: '"apply"를 입력해야 실제 적용이 진행됩니다.'
         required: true
@@ -22,18 +22,50 @@ permissions:
   contents: read
   id-token: write
 
-env:
-  GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-  GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-  TERRAFORM_STATE_BUCKET: ${{ secrets.TERRAFORM_STATE_BUCKET }}
-  TERRAFORM_TFVARS_DEV: ${{ secrets.TERRAFORM_TFVARS_DEV }}
-  TERRAFORM_TFVARS_PROD: ${{ secrets.TERRAFORM_TFVARS_PROD }}
-
 jobs:
-  terraform-apply:
-    name: Apply - ${{ github.event.inputs.environment }}
+  prepare-matrix:
+    name: 적용 대상 준비
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment }}
+    outputs:
+      matrix: ${{ steps.prepare.outputs.matrix }}
+
+    steps:
+      - name: 적용 대상 Matrix 생성
+        id: prepare
+        run: |
+          case "${{ github.event.inputs.target }}" in
+            dev)
+              MATRIX='[{"terraform_environment":"dev","github_environment":"PinHouse_dev"}]'
+              ;;
+            prod)
+              MATRIX='[{"terraform_environment":"prod","github_environment":"PinHouse_prod"}]'
+              ;;
+            all)
+              MATRIX='[{"terraform_environment":"dev","github_environment":"PinHouse_dev"},{"terraform_environment":"prod","github_environment":"PinHouse_prod"}]'
+              ;;
+            *)
+              echo "오류: 지원하지 않는 대상입니다: ${{ github.event.inputs.target }}"
+              exit 1
+              ;;
+          esac
+
+          echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+
+  terraform-apply:
+    name: Apply - ${{ matrix.terraform_environment }}
+    runs-on: ubuntu-latest
+    needs: prepare-matrix
+    if: needs.prepare-matrix.outputs.matrix != ''
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.prepare-matrix.outputs.matrix) }}
+    environment: ${{ matrix.github_environment }}
+    env:
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      TERRAFORM_STATE_BUCKET: ${{ secrets.TERRAFORM_STATE_BUCKET }}
+      TERRAFORM_TFVARS: ${{ secrets.TERRAFORM_TFVARS }}
 
     steps:
       - name: 적용 확인 값 검증
@@ -63,44 +95,33 @@ jobs:
       - name: State 버킷 변수 확인
         run: |
           if [ -z "${{ env.TERRAFORM_STATE_BUCKET }}" ]; then
-            echo "오류: GitHub Secrets에 TERRAFORM_STATE_BUCKET을 설정해야 합니다."
+            echo "오류: GitHub Environment Secret TERRAFORM_STATE_BUCKET을 설정해야 합니다."
             exit 1
           fi
 
       - name: Terraform 초기화
         id: init
-        working-directory: terraform/environments/${{ github.event.inputs.environment }}
+        working-directory: terraform/environments/${{ matrix.terraform_environment }}
         run: |
           terraform init \
             -backend-config="bucket=${{ env.TERRAFORM_STATE_BUCKET }}" \
-            -backend-config="prefix=terraform/${{ github.event.inputs.environment }}/state"
+            -backend-config="prefix=terraform/${{ matrix.terraform_environment }}/state"
 
       - name: Terraform tfvars 복원
         id: tfvars
-        working-directory: terraform/environments/${{ github.event.inputs.environment }}
+        working-directory: terraform/environments/${{ matrix.terraform_environment }}
         run: |
-          case "${{ github.event.inputs.environment }}" in
-            prod)
-              TFVARS_CONTENT="${TERRAFORM_TFVARS_PROD}"
-              SECRET_NAME="TERRAFORM_TFVARS_PROD"
-              ;;
-            *)
-              echo "오류: 지원하지 않는 환경입니다: ${{ github.event.inputs.environment }}"
-              exit 1
-              ;;
-          esac
-
-          if [ -z "${TFVARS_CONTENT}" ]; then
-            echo "오류: GitHub Secret ${SECRET_NAME}를 설정해야 합니다."
+          if [ -z "${TERRAFORM_TFVARS}" ]; then
+            echo "오류: GitHub Environment Secret TERRAFORM_TFVARS를 설정해야 합니다."
             exit 1
           fi
 
-          printf '%s\n' "${TFVARS_CONTENT}" > terraform.tfvars
+          printf '%s\n' "${TERRAFORM_TFVARS}" > terraform.tfvars
           chmod 600 terraform.tfvars
 
       - name: Terraform Plan 실행
         id: plan
-        working-directory: terraform/environments/${{ github.event.inputs.environment }}
+        working-directory: terraform/environments/${{ matrix.terraform_environment }}
         run: |
           terraform plan -no-color -out=tfplan
           terraform show -no-color tfplan > plan_output.txt
@@ -108,14 +129,14 @@ jobs:
       - name: Plan 결과 업로드
         uses: actions/upload-artifact@v4
         with:
-          name: tfplan-${{ github.event.inputs.environment }}-${{ github.run_number }}
+          name: tfplan-${{ matrix.terraform_environment }}-${{ github.run_number }}
           path: |
-            terraform/environments/${{ github.event.inputs.environment }}/tfplan
-            terraform/environments/${{ github.event.inputs.environment }}/plan_output.txt
+            terraform/environments/${{ matrix.terraform_environment }}/tfplan
+            terraform/environments/${{ matrix.terraform_environment }}/plan_output.txt
 
       - name: Terraform Apply 실행
         id: apply
-        working-directory: terraform/environments/${{ github.event.inputs.environment }}
+        working-directory: terraform/environments/${{ matrix.terraform_environment }}
         run: |
           terraform apply -auto-approve tfplan 2>&1 | tee apply_output.txt
 
@@ -123,25 +144,26 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: tfapply-${{ github.event.inputs.environment }}-${{ github.run_number }}
-          path: terraform/environments/${{ github.event.inputs.environment }}/apply_output.txt
+          name: tfapply-${{ matrix.terraform_environment }}-${{ github.run_number }}
+          path: terraform/environments/${{ matrix.terraform_environment }}/apply_output.txt
 
       - name: 배포 요약 생성
         if: always()
         run: |
-          echo "## Terraform Apply 요약 - ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "## Terraform Apply 요약 - ${{ matrix.terraform_environment }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**환경:** ${{ github.event.inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "**환경:** ${{ matrix.terraform_environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "**GitHub Environment:** ${{ matrix.github_environment }}" >> $GITHUB_STEP_SUMMARY
           echo "**실행 결과:** ${{ steps.apply.outcome }}" >> $GITHUB_STEP_SUMMARY
           echo "**실행 사용자:** @${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
           echo "**커밋 SHA:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          if [ -f terraform/environments/${{ github.event.inputs.environment }}/apply_output.txt ]; then
+          if [ -f terraform/environments/${{ matrix.terraform_environment }}/apply_output.txt ]; then
             echo "<details><summary>Apply 출력 보기</summary>" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
-            cat terraform/environments/${{ github.event.inputs.environment }}/apply_output.txt >> $GITHUB_STEP_SUMMARY
+            cat terraform/environments/${{ matrix.terraform_environment }}/apply_output.txt >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
             echo "</details>" >> $GITHUB_STEP_SUMMARY
           fi
@@ -149,5 +171,5 @@ jobs:
       - name: 실패 시 워크플로우 종료
         if: failure()
         run: |
-          echo "::error::${{ github.event.inputs.environment }} 환경 Terraform apply 실행에 실패했습니다."
+          echo "::error::${{ matrix.terraform_environment }} 환경 Terraform apply 실행에 실패했습니다."
           exit 1
