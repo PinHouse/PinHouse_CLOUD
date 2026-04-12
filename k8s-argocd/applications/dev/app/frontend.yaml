@@ -15,7 +15,7 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
-    argocd-image-updater.argoproj.io/image-list: asia-northeast3-docker.pkg.dev/dev-pinhouse/pinhouse-dev-fe/pinhouse-web
+    argocd-image-updater.argoproj.io/image-list: frontend=asia-northeast3-docker.pkg.dev/dev-pinhouse/pinhouse-dev-fe/pinhouse-web
     argocd-image-updater.argoproj.io/frontend.update-strategy: newest-build
     argocd-image-updater.argoproj.io/frontend.allow-tags: regexp:^[0-9]{8}_[0-9]{6}-[a-f0-9]{7}$
     argocd-image-updater.argoproj.io/frontend.kustomize.image-name: REPLACE_ME
@@ -38,7 +38,7 @@ spec:
   # 배포 대상 클러스터와 네임스페이스입니다.
   destination:
     server: https://kubernetes.default.svc
-    namespace: dev-app
+    namespace: app
 
   # Git 기준으로 자동 동기화합니다.
   syncPolicy:

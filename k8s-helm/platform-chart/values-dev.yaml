@@ -161,7 +161,7 @@ externalSecrets:
 
   secrets:
     - name: backend-secret-kv
-      namespace: dev-app
+      namespace: app
       spec:
         refreshInterval: 1h
         secretStoreRef:
