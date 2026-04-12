@@ -1,0 +1,3 @@
+kustomize:
+  images:
+  - REPLACE_ME=asia-northeast3-docker.pkg.dev/prod-pinhouse/pinhouse-prod-fe/pinhouse-web:20260410_054259-77b3d5a
