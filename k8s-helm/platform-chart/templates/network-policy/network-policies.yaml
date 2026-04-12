@@ -1,7 +1,7 @@
 {{- if .Values.networkPolicy.enabled }}
 ---
 # Devths NetworkPolicy
-# 네임스페이스: dev-app, stg-app, app
+# 네임스페이스: app, stg-app, app
 # Pod 레이블 기준: app: frontend / app: backend / app: ai
 #
 # 트래픽 흐름:

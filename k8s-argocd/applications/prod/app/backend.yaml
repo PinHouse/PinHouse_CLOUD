@@ -21,7 +21,7 @@ metadata:
   # 어노테이션 메타데이터
   annotations:
     # ArgoCD Image Updater 설정
-    argocd-image-updater.argoproj.io/image-list: asia-northeast3-docker.pkg.dev/prod-pinhouse/pinhouse-prod-be/pinhouse-server
+    argocd-image-updater.argoproj.io/image-list: backend=asia-northeast3-docker.pkg.dev/prod-pinhouse/pinhouse-prod-be/pinhouse-server
     argocd-image-updater.argoproj.io/backend.update-strategy: newest-build
     argocd-image-updater.argoproj.io/backend.allow-tags: regexp:^[0-9]{8}_[0-9]{6}-[a-f0-9]{7}$
     argocd-image-updater.argoproj.io/backend.kustomize.image-name: REPLACE_ME
