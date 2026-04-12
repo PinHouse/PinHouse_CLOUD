@@ -118,7 +118,7 @@ networkPolicy:
 # 인증서
 certificates:
   enabled: true
-  issuer: letsencrypt-staging
+  issuer: letsencrypt-prod
 
   certs:
     - name: pinhouse-tls-dev
