@@ -10,9 +10,9 @@ certManager:
   # 비운영 환경에서는 Let's Encrypt Staging issuer로 검증합니다.
   letsencrypt:
     staging:
-      enabled: true
-    production:
       enabled: false
+    production:
+      enabled: true
 
   # DNS-01 Challenge (CloudDNS)
   cloudDNS:
