@@ -29,14 +29,14 @@ kube-prometheus-stack:
     persistence:
       enabled: true
       type: sts
-      size: 20Gi
+      size: 10Gi
       storageClassName: "gce-standard-rwo"
 
   prometheus:
     prometheusSpec:
       # 비운영 환경 기준 메트릭 보관 기간과 최대 디스크 사용량입니다.
       retention: 15d
-      retentionSize: 50GB
+      retentionSize: 20GB
       # 실제 scrape는 Alloy가 수행하고, Prometheus는 remote write receiver로 메트릭을 받습니다.
       enableRemoteWriteReceiver: true
 
@@ -68,7 +68,7 @@ kube-prometheus-stack:
               - ReadWriteOnce
             resources:
               requests:
-                storage: 50Gi
+                storage: 30Gi
 
   alertmanager:
     # Alertmanager는 알림 라우팅 전용이라 상대적으로 작은 리소스로 시작합니다.
