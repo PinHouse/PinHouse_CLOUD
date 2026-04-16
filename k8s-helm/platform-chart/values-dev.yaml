@@ -69,12 +69,6 @@ gateway:
 accessControl:
   enabled: true
   blockedPaths:
-    - name: api-dev-swagger
-      hostnames: ["api.dev.pinhouse.co.kr"]
-      paths:
-        - "/swagger-ui"
-        - "/v3/api-docs"
-
     - name: api-dev-management
       hostnames: ["api.dev.pinhouse.co.kr"]
       paths:
@@ -87,6 +81,29 @@ accessControl:
       paths:
         - "/api/metrics"
         - "/prometheus"
+
+# 기본 인증 (HTTP Basic Authentication)
+basicAuth:
+  # Swagger 경로는 완전 차단 대신 아이디/비밀번호 인증 후 접근을 허용합니다.
+  routes:
+    - name: api-dev-swagger-auth
+      namespace: app
+      # HTTP 리스너가 아닌 HTTPS API 리스너에만 인증 라우트를 연결합니다.
+      sectionName: dev-api-https
+      hostnames:
+        - "api.dev.pinhouse.co.kr"
+      paths:
+        - "/swagger-ui"
+        - "/v3/api-docs"
+
+      # 인증이 끝난 요청은 기존 백엔드 서비스로 그대로 전달합니다.
+      backendRefs:
+        - name: backend-service-dev
+          port: 80
+
+      # app 네임스페이스에 동기화한 htpasswd Secret을 참조합니다.
+      secretName: swagger-basic-auth
+      realm: "PinHouse Dev Swagger"
 
 # 네트워크 정책
 networkPolicy:
@@ -181,6 +198,35 @@ externalSecrets:
               - regexp:
                   source: "^Dev_BE_(.*)$"
                   target: "$1"
+
+    - name: swagger-basic-auth
+      namespace: app
+      spec:
+        refreshInterval: 1h
+        secretStoreRef:
+          name: gcp-secret-manager
+          kind: ClusterSecretStore
+        target:
+          name: swagger-basic-auth
+          creationPolicy: Owner
+          deletionPolicy: Retain
+          template:
+            engineVersion: v2
+            type: nginx.org/htpasswd
+            data:
+              # NGINX Gateway Fabric는 auth 키에 htpasswd 형식 문자열을 기대합니다.
+              auth: "{{ .auth }}"
+        dataFrom:
+          - find:
+              name:
+                # Basic Auth용 Secret 하나만 선택해 auth 키로 고정합니다.
+                regexp: "^Dev_SWAGGER_BASIC_AUTH$"
+              conversionStrategy: Default
+              decodingStrategy: None
+            rewrite:
+              - regexp:
+                  source: "^Dev_SWAGGER_BASIC_AUTH$"
+                  target: "auth"
 
     - name: monitoring-secret-kv
       namespace: monitoring

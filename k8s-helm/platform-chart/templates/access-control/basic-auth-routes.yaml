@@ -1,0 +1,71 @@
+{{- if .Values.basicAuth.routes }}
+{{- range $route := .Values.basicAuth.routes }}
+{{- $routeName := required "🚨 에러: basicAuth.routes[].name 값이 빠졌습니다!" $route.name }}
+{{- $namespace := required "🚨 에러: basicAuth.routes[].namespace 값이 빠졌습니다!" $route.namespace }}
+{{- $secretName := required "🚨 에러: basicAuth.routes[].secretName 값이 빠졌습니다!" $route.secretName }}
+{{- $hostnames := required "🚨 에러: basicAuth.routes[].hostnames 값이 빠졌습니다!" $route.hostnames }}
+{{- $paths := required "🚨 에러: basicAuth.routes[].paths 값이 빠졌습니다!" $route.paths }}
+{{- $backendRefs := required "🚨 에러: basicAuth.routes[].backendRefs 값이 빠졌습니다!" $route.backendRefs }}
+{{- $filterName := printf "%s-basic-auth" $routeName }}
+---
+# HTTP Basic Authentication 필터를 생성합니다.
+apiVersion: gateway.nginx.org/v1alpha1
+kind: AuthenticationFilter
+metadata:
+  name: {{ $filterName }}
+  namespace: {{ $namespace }}
+spec:
+  type: Basic
+  basic:
+    # 같은 네임스페이스의 htpasswd Secret을 참조합니다.
+    secretRef:
+      name: {{ $secretName }}
+    realm: {{ default "Restricted Area" $route.realm | quote }}
+
+---
+# 인증이 필요한 경로만 별도 HTTPRoute로 라우팅합니다.
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ $routeName }}
+  namespace: {{ $namespace }}
+spec:
+  parentRefs:
+    - name: {{ $.Values.gateway.name }}
+      namespace: {{ $.Values.gateway.namespace }}
+      {{- with $route.sectionName }}
+      # 인증 라우트를 특정 리스너에만 연결합니다.
+      sectionName: {{ . }}
+      {{- end }}
+
+  # 지정한 호스트 이름에만 인증을 적용합니다.
+  hostnames:
+    {{- range $hostnames }}
+    - {{ . | quote }}
+    {{- end }}
+
+  # 더 구체적인 Swagger 경로를 먼저 매칭하여 Basic Auth를 요구합니다.
+  rules:
+    {{- range $paths }}
+    {{- $pathPrefix := trimSuffix "*" (trimSuffix "/*" .) }}
+    - matches:
+        - path:
+            type: PathPrefix
+            value: {{ $pathPrefix | quote }}
+      filters:
+        - type: ExtensionRef
+          extensionRef:
+            group: gateway.nginx.org
+            kind: AuthenticationFilter
+            name: {{ $filterName }}
+      backendRefs:
+        {{- range $backendRefs }}
+        - name: {{ required "🚨 에러: basicAuth.routes[].backendRefs[].name 값이 빠졌습니다!" .name }}
+          port: {{ required "🚨 에러: basicAuth.routes[].backendRefs[].port 값이 빠졌습니다!" .port }}
+          {{- with .namespace }}
+          namespace: {{ . }}
+          {{- end }}
+        {{- end }}
+    {{- end }}
+{{- end }}
+{{- end }}
