@@ -21,7 +21,7 @@ tempo:
     replicas: 1
     persistence:
       enabled: true
-      size: 20Gi
+      size: 10Gi
       storageClass: "gce-standard-rwo"
     resources:
       requests:

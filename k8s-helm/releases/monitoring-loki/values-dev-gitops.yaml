@@ -28,7 +28,7 @@ loki:
 
     persistence:
       enabled: true
-      size: 30Gi
+      size: 15Gi
       storageClass: "gce-standard-rwo"
 
     resources:
