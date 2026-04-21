@@ -82,4 +82,20 @@ spec:
           from: All
     {{- end }}
 
+    {{- if .Values.gateway.listeners.admin.enabled }}
+    # Admin
+    - name: admin-https
+      port: 443
+      protocol: HTTPS
+      hostname: {{ .Values.gateway.listeners.admin.domain }}
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: {{ .Values.gateway.listeners.admin.tlsSecretName }}
+            namespace: {{ .Values.gateway.namespace }}
+      allowedRoutes:
+        namespaces:
+          from: All
+    {{- end }}
+
 {{- end }}

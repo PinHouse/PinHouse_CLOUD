@@ -37,6 +37,13 @@ data:
     - name: Content-Type
       value: application/json
 
+  # Admin Nonprod (Dev + Staging)
+  service.webhook.admin-nonprod: |
+    url: $discord-admin-nonprod-webhook
+    headers:
+    - name: Content-Type
+      value: application/json
+
   # Frontend Production
   service.webhook.frontend-prod: |
     url: $discord-frontend-prod-webhook
@@ -95,6 +102,44 @@ data:
             }]
           }
       backend-nonprod:
+        method: POST
+        body: |
+          {
+            "embeds": [{
+              "title": "✅ 배포 완료",
+              "description": "ArgoCD 배포가 성공적으로 완료되었습니다.",
+              "color": 3066993,
+              "fields": [
+                {
+                  "name": "🌍 Environment",
+                  "value": "{{ index .app.metadata.labels "pinhouse.co.kr/environment" | upper }}",
+                  "inline": true
+                },
+                {
+                  "name": "📦 Application",
+                  "value": "{{.app.metadata.name}}",
+                  "inline": true
+                },
+                {
+                  "name": "📍 Namespace",
+                  "value": "{{.app.spec.destination.namespace}}",
+                  "inline": true
+                },
+                {
+                  "name": "🔖 Revision",
+                  "value": "{{.app.status.sync.revision | substr 0 7}}",
+                  "inline": true
+                },
+                {
+                  "name": "🔗 ArgoCD",
+                  "value": "[바로가기]({{.context.argocdUrl}}/applications/{{.app.metadata.name}})",
+                  "inline": false
+                }
+              ],
+              "timestamp": "{{.app.status.operationState.finishedAt}}"
+            }]
+          }
+      admin-nonprod:
         method: POST
         body: |
           {
@@ -364,6 +409,43 @@ data:
               ]
             }]
           }
+      admin-nonprod:
+        method: POST
+        body: |
+          {
+            "embeds": [{
+              "title": "❌ 동기화 실패",
+              "description": "ArgoCD 동기화에 실패했습니다.",
+              "color": 15158332,
+              "fields": [
+                {
+                  "name": "🌍 Environment",
+                  "value": "{{ index .app.metadata.labels "pinhouse.co.kr/environment" | upper }}",
+                  "inline": true
+                },
+                {
+                  "name": "📦 Application",
+                  "value": "{{.app.metadata.name}}",
+                  "inline": true
+                },
+                {
+                  "name": "📍 Namespace",
+                  "value": "{{.app.spec.destination.namespace}}",
+                  "inline": true
+                },
+                {
+                  "name": "⚠️ Error",
+                  "value": "{{.app.status.operationState.message}}",
+                  "inline": false
+                },
+                {
+                  "name": "🔗 ArgoCD",
+                  "value": "[바로가기]({{.context.argocdUrl}}/applications/{{.app.metadata.name}})",
+                  "inline": false
+                }
+              ]
+            }]
+          }
       ai-nonprod:
         method: POST
         body: |
@@ -551,6 +633,38 @@ data:
             }]
           }
       backend-nonprod:
+        method: POST
+        body: |
+          {
+            "embeds": [{
+              "title": "⚠️ 헬스 체크 이상",
+              "description": "애플리케이션 헬스 상태가 비정상입니다.",
+              "color": 16776960,
+              "fields": [
+                {
+                  "name": "🌍 Environment",
+                  "value": "{{ index .app.metadata.labels "pinhouse.co.kr/environment" | upper }}",
+                  "inline": true
+                },
+                {
+                  "name": "📦 Application",
+                  "value": "{{.app.metadata.name}}",
+                  "inline": true
+                },
+                {
+                  "name": "🏥 Health Status",
+                  "value": "{{.app.status.health.status}}",
+                  "inline": true
+                },
+                {
+                  "name": "🔗 ArgoCD",
+                  "value": "[바로가기]({{.context.argocdUrl}}/applications/{{.app.metadata.name}})",
+                  "inline": false
+                }
+              ]
+            }]
+          }
+      admin-nonprod:
         method: POST
         body: |
           {

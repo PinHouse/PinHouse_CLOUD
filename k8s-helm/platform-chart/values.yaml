@@ -77,6 +77,11 @@ gateway:
       domain: grafana.your-domain.com  # 🔒 실제 도메인으로 변경
       tlsSecretName: your-tls-grafana
 
+    admin:
+      enabled: false
+      domain: admin.your-domain.com  # 🔒 실제 도메인으로 변경
+      tlsSecretName: your-tls-admin
+
 # 접근 제어 (Access Control)
 accessControl:
   enabled: false
