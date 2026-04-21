@@ -1,5 +1,5 @@
 # ===================================
-# Dev Frontend
+# Dev Admin
 # ===================================
 
 apiVersion: argoproj.io/v1alpha1
@@ -22,9 +22,9 @@ metadata:
     argocd-image-updater.argoproj.io/write-back-method: git
     argocd-image-updater.argoproj.io/git-branch: main
 
-    notifications.argoproj.io/subscribe.on-deployed.frontend-nonprod: ""
-    notifications.argoproj.io/subscribe.on-sync-failed.frontend-nonprod: ""
-    notifications.argoproj.io/subscribe.on-health-degraded.frontend-nonprod: ""
+    notifications.argoproj.io/subscribe.on-deployed.admin-nonprod: ""
+    notifications.argoproj.io/subscribe.on-sync-failed.admin-nonprod: ""
+    notifications.argoproj.io/subscribe.on-health-degraded.admin-nonprod: ""
 
 spec:
   project: default

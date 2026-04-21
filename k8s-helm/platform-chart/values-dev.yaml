@@ -65,6 +65,11 @@ gateway:
       domain: grafana.dev.pinhouse.co.kr
       tlsSecretName: pinhouse-tls-grafana
 
+    admin:
+      enabled: true
+      domain: admin.dev.pinhouse.co.kr
+      tlsSecretName: pinhouse-tls-admin
+
 # 접근 제어 (Access Control) - 비운영도 운영과 같은 기준으로 차단
 accessControl:
   enabled: true
@@ -162,6 +167,12 @@ certificates:
       namespace: nginx-gateway
       dnsNames:
         - grafana.dev.pinhouse.co.kr
+      enabled: true
+
+    - name: pinhouse-tls-admin
+      namespace: nginx-gateway
+      dnsNames:
+        - admin.dev.pinhouse.co.kr
       enabled: true
 
 # GCP Secret Manager 기반 시크릿 적용
