@@ -18,7 +18,7 @@ module "storage" {
     # 기본 버킷 추가
     var.create_storage_buckets ? tomap({
       static_assets = {
-        name                        = "${var.project}-${var.environment}"
+        name                        = "${var.project}-${var.environment}-terraform"
         storage_class               = "STANDARD"
         uniform_bucket_level_access = true
         versioning_enabled          = true
@@ -53,7 +53,7 @@ module "storage" {
     # 모니터링 버킷 추가
     var.create_monitoring_buckets ? tomap({
       loki = {
-        name                        = "${var.project}-${var.environment}-${var.monitoring_loki}"
+        name                        = "${var.project}-${var.environment}-${var.monitoring_loki}-terraform"
         storage_class               = "STANDARD"
         uniform_bucket_level_access = true
         versioning_enabled          = true
@@ -62,7 +62,7 @@ module "storage" {
         cors                        = []
       }
       tempo = {
-        name                        = "${var.project}-${var.environment}-${var.monitoring_tempo}"
+        name                        = "${var.project}-${var.environment}-${var.monitoring_tempo}-terraform"
         storage_class               = "STANDARD"
         uniform_bucket_level_access = true
         versioning_enabled          = true

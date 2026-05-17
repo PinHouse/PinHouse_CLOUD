@@ -13,7 +13,7 @@ tempo:
     # 트레이스 원본 데이터는 GCS 버킷에 저장합니다.
     trace:
       gcs:
-        bucket_name: "pinhouse-dev-tempo"
+        bucket_name: "pinhouse-dev-tempo-terraform"
       block:
         retention: 336h
 
