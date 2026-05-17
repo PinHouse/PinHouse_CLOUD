@@ -14,7 +14,7 @@ nameSuffix: -dev
 # ArgoCD Image Updater가 자동으로 newTag를 업데이트
 images:
   - name: REPLACE_ME
-    newName: asia-northeast3-docker.pkg.dev/dev-pinhouse/pinhouse-dev-be/pinhouse-server
+    newName: asia-northeast3-docker.pkg.dev/dev-pinhouse-2/pinhouse-dev-be/pinhouse-server
     newTag: latest
 
 # overlays 수정내용 반영

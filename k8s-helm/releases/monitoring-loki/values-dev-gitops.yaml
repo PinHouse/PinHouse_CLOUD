@@ -17,11 +17,11 @@ loki:
     # Loki 로그 청크와 인덱스는 GCS 버킷에 저장합니다.
     storage:
       bucketNames:
-        chunks: "pinhouse-dev-loki"
-        ruler: "pinhouse-dev-loki"
-        admin: "pinhouse-dev-loki"
+        chunks: "pinhouse-dev-loki-terraform"
+        ruler: "pinhouse-dev-loki-terraform"
+        admin: "pinhouse-dev-loki-terraform"
       gcs:
-        bucket_name: "pinhouse-dev-loki"
+        bucket_name: "pinhouse-dev-loki-terraform"
 
   singleBinary:
     replicas: 1

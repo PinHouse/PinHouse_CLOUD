@@ -3,7 +3,7 @@
 # ========================================
 terraform {
   backend "gcs" {
-    bucket = "pinhouse-dev-state-bucket"
+    bucket = "pinhouse-dev-terraform-state-bucket"
     prefix = "terraform/dev/state"
   }
 }

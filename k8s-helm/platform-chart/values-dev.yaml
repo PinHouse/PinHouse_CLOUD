@@ -16,7 +16,7 @@ certManager:
 
   # DNS-01 Challenge (CloudDNS)
   cloudDNS:
-    projectId: "dev-pinhouse"
+    projectId: "dev-pinhouse-2"
 
 # 게이트웨이
 gateway:
@@ -185,7 +185,7 @@ externalSecrets:
       spec:
         provider:
           gcpsm:
-            projectID: dev-pinhouse
+            projectID: dev-pinhouse-2
 
   secrets:
     - name: backend-secret-kv
