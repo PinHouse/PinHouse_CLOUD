@@ -15,7 +15,7 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   annotations:
-    argocd-image-updater.argoproj.io/image-list: backend=asia-northeast3-docker.pkg.dev/dev-pinhouse-2/pinhouse-dev-be/pinhouse-server
+    argocd-image-updater.argoproj.io/image-list: backend=asia-northeast3-docker.pkg.dev/dev-pinhouse-2/pinhouse-dev-be/pinhouse-server:latest
     argocd-image-updater.argoproj.io/backend.update-strategy: newest-build
     argocd-image-updater.argoproj.io/backend.allow-tags: regexp:^[0-9]{8}_[0-9]{6}-[a-f0-9]{7}$
     argocd-image-updater.argoproj.io/backend.kustomize.image-name: REPLACE_ME
